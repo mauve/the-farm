@@ -19,11 +19,10 @@ namespace farm {
 class AgentController
 {
 public:
-	class Lease;
-
 	AgentController ();
 	~AgentController ();
 
+	// TODO: use RAII for this
 	void register_agent (const AgentInfo& info);
 	void unregister_agent (const AgentInfo& info);
 
@@ -32,8 +31,6 @@ public:
 	std::vector<AgentInfo> find_compatible_agents (const CompilerRequirement& req);
 
 private:
-	friend class Lease;
-
 	boost::mutex _mutex;
 	typedef std::set<AgentInfo> agents_t;
 	agents_t _known_agents;

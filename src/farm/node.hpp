@@ -14,11 +14,13 @@
 
 namespace farm {
 
+class JobOrder;
+
 class Node
 {
 public:
 	enum JobState { queued, running, failed, finished };
-	typedef boost::function<void (JobState)> job_callback_t;
+	typedef boost::function<void (boost::shared_ptr<const JobOrder>, JobState)> job_callback_t;
 
 	Node (boost::asio::io_service& io_service,
 			const boost::uuids::uuid& node_id);
