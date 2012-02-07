@@ -6,6 +6,7 @@
 #include <boost/asio/io_service.hpp>
 #include <boost/asio/signal_set.hpp>
 #include <boost/thread/mutex.hpp>
+#include <boost/thread/condition_variable.hpp>
 #include <boost/smart_ptr/shared_ptr.hpp>
 
 #include <list>
@@ -26,9 +27,11 @@ public:
 	parent (boost::asio::io_service& io_service);
 	~parent ();
 
+	/* return true if child started successfully */
 	bool start_child (const child_options& opts, const child_callback_t& cb);
 
 	void stop_all ();
+	void join_all ();
 
 private:
 	void queue_signal_handler ();
@@ -38,6 +41,7 @@ private:
 	boost::asio::io_service& _io_service;
 	boost::asio::signal_set _signal_set;
 	boost::mutex _mutex;
+	boost::condition_variable _cond;
 	typedef std::list<std::pair<child_pointer, child_callback_t> > child_list_t;
 	child_list_t _children;
 };

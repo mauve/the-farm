@@ -21,6 +21,7 @@ parent::parent (boost::asio::io_service& io_service)
 parent::~parent()
 {
 	stop_all ();
+	join_all ();
 }
 
 bool parent::start_child (const child_options& opts, const child_callback_t& cb)
@@ -42,6 +43,13 @@ void parent::stop_all ()
 	child_list_t::iterator iter = _children.begin();
 	for (; iter != _children.end(); ++iter)
 		iter->first->stop();
+}
+
+void parent::join_all ()
+{
+	boost::unique_lock<boost::mutex> lock(_mutex);
+	while (!_children.empty())
+		_cond.wait(lock);
 }
 
 void parent::queue_signal_handler()
@@ -83,6 +91,8 @@ void parent::on_signal(int signal_number)
     			_io_service.post(boost::bind(cb, child));
     		}
     	}
+
+    	_cond.notify_all();
     }
 
     queue_signal_handler();
