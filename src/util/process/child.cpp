@@ -140,7 +140,7 @@ boost::system::error_code child::start ()
 					boost::make_tuple(
 						iter->first,
 						iter->second,
-						boost::shared_ptr<posix::pipe>()
+						boost::shared_ptr<posix::pipe>() // this is actually a NULLptr
 					)
 				);
 		}
