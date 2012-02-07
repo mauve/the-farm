@@ -10,61 +10,11 @@
 #include <signal.h>
 #include <unistd.h>
 
+#include "_detail/zero_teminated.hpp"
+
 namespace util {
 
 namespace process {
-
-namespace _detail {
-
-namespace {
-
-class zero_terminated_list_of_strings
-{
-public:
-	zero_terminated_list_of_strings ()
-	{}
-
-	~zero_terminated_list_of_strings ()
-	{
-		for (std::vector<char*>::iterator iter = _buf.begin();
-				iter != _buf.end(); ++iter)
-		{
-			delete[] *iter;
-		}
-	}
-
-	void add (const std::string& s)
-	{
-		char* copy = new char[s.length() + 1];
-		std::strcpy(copy, s.c_str());
-		_buf.push_back(copy);
-	}
-
-	void add (const std::vector<std::string>& s)
-	{
-		for (std::vector<std::string>::const_iterator iter = s.begin();
-				iter != s.end(); ++iter)
-		{
-			add(*iter);
-		}
-	}
-
-	char** data()
-	{
-		if (_buf.empty() || _buf.back() != 0) {
-			_buf.push_back(0);
-		}
-
-		return &*(_buf.begin());
-	}
-
-private:
-	std::vector<char*> _buf;
-};
-
-}  // namespace anonymous
-
-}  // namespace _detail
 
 child::child (boost::asio::io_service& io_service,
 				parent& p,
