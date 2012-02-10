@@ -22,7 +22,7 @@ struct MemoryOutputStreamFixture
 
 BOOST_AUTO_TEST_SUITE(util)
 
-BOOST_FIXTURE_TEST_SUITE(memory_output_stream, MemoryOutputStreamFixture)
+BOOST_FIXTURE_TEST_SUITE(memory_output_stream_tests, MemoryOutputStreamFixture)
 
 BOOST_AUTO_TEST_CASE(create)
 {
