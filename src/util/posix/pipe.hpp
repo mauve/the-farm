@@ -16,7 +16,10 @@ public:
 	~pipe ();
 
 	int read_end ();
+	int steal_read_end ();
+
 	int write_end ();
+	int steal_write_end ();
 
 private:
 	int _read, _write;

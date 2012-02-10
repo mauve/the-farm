@@ -28,10 +28,11 @@ public:
 	~parent ();
 
 	/* return true if child started successfully */
-	bool start_child (const child_options& opts, const child_callback_t& cb);
+	child_pointer start_child (const child_options& opts, const child_callback_t& cb);
 
 	void stop_all ();
 	void join_all ();
+	void detach_all ();
 
 private:
 	void queue_signal_handler ();

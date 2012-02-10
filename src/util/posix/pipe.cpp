@@ -26,8 +26,10 @@ pipe::pipe ()
 
 pipe::~pipe ()
 {
-	::close(_read);
-	::close(_write);
+	if (_read >= 0)
+		::close(_read);
+	if (_write >= 0)
+		::close(_write);
 }
 
 int pipe::read_end()
@@ -35,9 +37,23 @@ int pipe::read_end()
 	return _read;
 }
 
+int pipe::steal_read_end()
+{
+	int r = _read;
+	_read = -1;
+	return r;
+}
+
 int pipe::write_end()
 {
 	return _write;
+}
+
+int pipe::steal_write_end()
+{
+	int w = _write;
+	_write = -1;
+	return w;
 }
 
 }  // namespace posix

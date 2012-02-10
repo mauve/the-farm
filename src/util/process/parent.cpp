@@ -20,21 +20,20 @@ parent::parent (boost::asio::io_service& io_service)
 
 parent::~parent()
 {
-	stop_all ();
-	join_all ();
+	detach_all();
 }
 
-bool parent::start_child (const child_options& opts, const child_callback_t& cb)
+parent::child_pointer parent::start_child (const child_options& opts, const child_callback_t& cb)
 {
 	boost::unique_lock<boost::mutex> lock(_mutex);
 	child_pointer c(new child(_io_service, *this, opts));
 	if (!c->start()) {
 		// started successfully
 		_children.push_back(std::make_pair(c, cb));
-		return true;
+		return c;
 	}
 
-	return false;
+	return child_pointer();
 }
 
 void parent::stop_all ()
@@ -50,6 +49,17 @@ void parent::join_all ()
 	boost::unique_lock<boost::mutex> lock(_mutex);
 	while (!_children.empty())
 		_cond.wait(lock);
+}
+
+void parent::detach_all ()
+{
+	boost::unique_lock<boost::mutex> lock(_mutex);
+	for (child_list_t::iterator iter = _children.begin();
+			iter != _children.end();)
+	{
+		iter->first->detach();
+		iter = _children.erase(iter);
+	}
 }
 
 void parent::queue_signal_handler()
@@ -75,7 +85,6 @@ void parent::on_signal(int signal_number)
     	{
     		if (iter->first->get_pid() == pid) {
     			child_pointer child = iter->first;
-    			_children.erase(iter);
 
     			if (WIFEXITED(status))
     				status = WEXITSTATUS(status);
@@ -85,10 +94,9 @@ void parent::on_signal(int signal_number)
     			child->report_stopped(status);
 
     			child_callback_t& cb = iter->second;
+    			cb(child);
 
-    			// call the callback a little later
-    			// on the mainloop
-    			_io_service.post(boost::bind(cb, child));
+    			_children.erase(iter);
     		}
     	}
 

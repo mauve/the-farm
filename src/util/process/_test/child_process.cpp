@@ -8,10 +8,13 @@
 #include <sstream>
 #include <string>
 
+#include <unistd.h>
+
 int main (int argc, char* argv[])
 {
 	if (argc == 1) {
 		std::cout << "Hello World!" << std::endl;
+		usleep(1000000);
 		return 0;
 	}
 
@@ -51,8 +54,8 @@ int main (int argc, char* argv[])
 		}
 
 		case 4: {
-			std::cerr << "Hello World!" << std::endl;
-			std::cout << "Hello World!" << std::endl;
+			std::cerr << "Hello Err World!" << std::endl;
+			std::cout << "Hello Out World!" << std::endl;
 			return 0;
 		}
 

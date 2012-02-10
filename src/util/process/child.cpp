@@ -12,6 +12,13 @@
 
 #include "_detail/zero_teminated.hpp"
 
+#ifndef NDEBUG
+#	include <iostream>
+#	define DEBUG(x) std::cerr << x << std::endl
+#else
+#	define DEBUG(x)
+#endif
+
 namespace util {
 
 namespace process {
@@ -25,7 +32,8 @@ child::child (boost::asio::io_service& io_service,
 	  _detach(false),
 	  _running(false),
 	  _exited(false)
-{}
+{
+}
 
 child::~child()
 {
@@ -153,13 +161,14 @@ boost::system::error_code child::start ()
 	pid_t fork_result = fork ();
 	if (fork_result < 0) {
 		// error
+		DEBUG("child::start() fork error: " << errno);
 		return boost::system::error_code(errno, boost::system::system_category());
 	}
 	else if (fork_result == 0) {
 		//
 		// we are the child
 		//
-		_io_service.notify_fork(boost::asio::io_service::fork_child);
+		// _io_service.notify_fork(boost::asio::io_service::fork_child);
 
 		// dup and close the other end of the pipes
 		for (pipes_t::iterator iter = pipes.begin();
@@ -196,8 +205,11 @@ boost::system::error_code child::start ()
 		}
 
 		// execute the child process
-		::execv(_opts.get_command().c_str(),
-				(char* const*)(argv.data()));
+		if (::execv(_opts.get_command().c_str(),
+				(char* const*)(argv.data())) < 0)
+		{
+			DEBUG("CHILD execv failed: " << errno);
+		}
 	}
 	else if (fork_result > 0)
 	{
@@ -208,6 +220,36 @@ boost::system::error_code child::start ()
 		_io_service.notify_fork(boost::asio::io_service::fork_parent);
 		_pid = fork_result;
 		_running = true;
+
+		// dup and close the other end of the pipes
+		for (pipes_t::iterator iter = pipes.begin();
+				iter != pipes.end(); ++iter)
+		{
+			stream_id sid = boost::get<0>(*iter);
+			child_options::stream_behaviour beh = boost::get<1>(*iter);
+			boost::shared_ptr<posix::pipe> p = boost::get<2>(*iter);
+
+			boost::shared_ptr<stream_descriptor> stream(new stream_descriptor(_io_service));
+			switch (beh)
+			{
+				case child_options::pipe_read: {
+					stream->assign(p->steal_write_end());
+					_streams.insert(std::make_pair(sid, stream));
+					break;
+				}
+
+				case child_options::pipe_write: {
+					stream->assign(p->steal_read_end());
+					_streams.insert(std::make_pair(sid, stream));
+					break;
+				}
+
+				default:
+					break;
+			}
+
+			p.reset();
+		}
 	}
 
 	return boost::system::error_code();

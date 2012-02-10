@@ -10,7 +10,7 @@ BOOST_AUTO_TEST_SUITE(process)
 
 BOOST_AUTO_TEST_SUITE(_detail)
 
-BOOST_AUTO_TEST_SUITE(zero_terminated)
+BOOST_AUTO_TEST_SUITE(zero_terminated_tests)
 
 BOOST_AUTO_TEST_CASE(empty)
 {
