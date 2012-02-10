@@ -22,7 +22,8 @@ util_SRCS = \
 
 PROGRAMS = \
 			util-test \
-			child-process
+			child-process \
+			process-test
 
 INCLUDES = src
 
@@ -34,6 +35,13 @@ util-test_SRCS = ${util_SRCS} \
 util-test_LIBS = boost_system boost_thread boost_unit_test_framework
 
 child-process_SRCS = \
-			src/util/process/_test/child_process.cpp
+				src/util/process/_test/child_process.cpp
+
+process-test_SRCS = ${util_SRCS} \
+				src/util/process/_test/process_tests.cpp
+
+process-test_LIBS = boost_system boost_thread
+process-test_INCLUDES = src
+process-test_DEFINES = CHILD_PROCESS_PATH="\"`pwd`/bin/Debug/child-process\""
 
 include common.mk
