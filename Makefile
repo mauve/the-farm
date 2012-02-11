@@ -4,6 +4,7 @@ package = the-farm
 util_HDRS = \
 			src/util/functional/member-function-registry.hpp \
 			src/util/memstream.hpp \
+			src/util/ansi/colors.hpp \
 			src/util/posix/pipe.hpp \
 			src/util/process/child.hpp \
 			src/util/process/child_options.hpp \
@@ -13,6 +14,7 @@ util_HDRS = \
 
 util_SRCS = \
 			src/util/memstream.cpp \
+			src/util/ansi/colors.cpp \
 			src/util/posix/pipe.cpp \
 			src/util/process/child.cpp \
 			src/util/process/child_options.cpp \
@@ -23,19 +25,25 @@ util_SRCS = \
 PROGRAMS = \
 			util-test \
 			child-process \
-			process-test
+			process-test \
+			colors-test
 
 INCLUDES = src
 
 util-test_SRCS = ${util_SRCS} \
 				 src/util/util_test.cpp \
 				 src/util/memstream_tests.cpp \
+				 src/util/ansi/colors_tests.cpp \
 				 src/util/process/_detail/zero_terminated_tests.cpp
 
 util-test_LIBS = boost_system boost_thread boost_unit_test_framework
 
 child-process_SRCS = \
 				src/util/process/_test/child_process.cpp
+
+colors-test_SRCS = \
+				src/util/ansi/colors.cpp \
+				src/util/ansi/_test/colors_test.cpp
 
 process-test_SRCS = ${util_SRCS} \
 				src/util/process/_test/process_tests.cpp
