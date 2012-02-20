@@ -12,32 +12,41 @@
 
 namespace farm {
 
-class CompilerRequirement;
+namespace requirements {
+
+class Requirement;
+
+}  // namespace requirements
+
+namespace jobs {
 
 class JobOrder
 {
 public:
+	JobOrder (const boost::uuids::uuid& id);
 	JobOrder (const boost::uuids::uuid& id,
-				const std::vector<CompilerRequirement>& compilers,
+				const std::vector<requirements::Requirement>& requirements,
 				const std::string& source_code,
 				const std::string& input);
-
 	~JobOrder ();
 
 	const boost::uuids::uuid& get_id () const;
 
-	const std::vector<CompilerRequirement>& required_compilers () const;
+	std::vector<requirements::Requirement>& get_requirements ();
+	const std::vector<requirements::Requirement>& get_requirements () const;
 
-	const std::string& code () const;
-	const std::string& input () const;
+	const std::string& get_code () const;
+	const std::string& get_input () const;
 
 private:
 	boost::uuids::uuid _id;
-	std::vector<CompilerRequirement> _required_compilers;
+	std::vector<requirements::Requirement> _requirements;
 
 	std::string _code;
 	std::string _input;
 };
+
+}  // namespace jobs
 
 }  // namespace farm
 

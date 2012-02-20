@@ -6,7 +6,7 @@
 #define FARM_AGENT_CONTROLLER_HPP_
 
 #include <farm/agent/agent.hpp>
-#include <farm/compiler.hpp>
+#include <farm/compiler/requirement.hpp>
 
 #include <vector>
 #include <set>

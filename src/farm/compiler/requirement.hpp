@@ -2,8 +2,8 @@
  * Copyright (C) 2012, All rights reserved, Mikael Olenfalk <mikael@olenfalk.se>
  */
 
-#ifndef FARM_COMPILER_HPP_
-#define FARM_COMPILER_HPP_
+#ifndef FARM_COMPILER_REQUIREMENT_HPP_
+#define FARM_COMPILER_REQUIREMENT_HPP_
 
 #include <string>
 #include <vector>
@@ -11,33 +11,6 @@
 #include <farm/version.hpp>
 
 namespace farm {
-
-struct CompilerRequirement;
-// struct UnfulfilledRequirement;
-
-class CompilerDescription
-{
-public:
-	CompilerDescription(const std::string& name, const std::string& version_info,
-						const Version& version, const std::vector<std::string>& supported_standards);
-	~CompilerDescription ();
-
-	const std::string& get_name () const;
-	const std::string& get_version_info () const;
-	const Version& get_version () const;
-	const std::vector<std::string>& get_supported_standards () const;
-
-	bool supports (const CompilerRequirement& req) const;
-
-private:
-	std::string _name;
-	std::string _version_info;
-	Version _version;
-	std::vector<std::string> _supported_standards;
-
-	// TODO: implement later
-	// bool supports (const CompilerRequirement& req, UnfulfilledRequirement& missing);
-};
 
 class CompilerRequirement
 {
@@ -67,4 +40,4 @@ private:
 
 }  // namespace farm
 
-#endif /* FARM_COMPILER_HPP_ */
+#endif /* FARM_COMPILER_REQUIREMENT_HPP_ */

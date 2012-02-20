@@ -3,6 +3,7 @@
  */
 
 #include <farm/agent/controller.hpp>
+#include <farm/compiler/description.hpp>
 
 #include <boost/thread/locks.hpp>
 
