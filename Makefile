@@ -35,7 +35,6 @@ farm_base_HDRS = \
 			src/farm/compiler/runner.hpp \
 			src/farm/jobs/order.hpp \
 			src/farm/jobs/result.hpp \
-			src/farm/node.hpp \
 			src/farm/requirements/matcher.hpp \
 			src/farm/requirements/matcher_registry.hpp \
 			src/farm/requirements/matchers.hpp \
@@ -52,7 +51,6 @@ farm_base_SRCS = \
 			src/farm/compiler/runner.cpp \
 			src/farm/jobs/order.cpp \
 			src/farm/jobs/result.cpp \
-			src/farm/node.cpp \
 			src/farm/requirements/matcher.cpp \
 			src/farm/requirements/matcher_registry.cpp \
 			src/farm/requirements/matchers.cpp \
