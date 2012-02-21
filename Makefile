@@ -31,6 +31,8 @@ farm_base_HDRS = \
 			src/farm/agent/job_instance.hpp \
 			src/farm/compiler/description.hpp \
 			src/farm/compiler/error_info.hpp \
+			src/farm/compiler/error_parser.hpp \
+			src/farm/compiler/regex_error_parser.hpp \
 			src/farm/compiler/requirement.hpp \
 			src/farm/compiler/runner.hpp \
 			src/farm/jobs/order.hpp \
@@ -47,6 +49,8 @@ farm_base_SRCS = \
 			src/farm/agent/controller.cpp \
 			src/farm/compiler/description.cpp \
 			src/farm/compiler/error_info.cpp \
+			src/farm/compiler/error_parser.cpp \
+			src/farm/compiler/regex_error_parser.cpp \
 			src/farm/compiler/requirement.cpp \
 			src/farm/compiler/runner.cpp \
 			src/farm/jobs/order.cpp \
@@ -59,7 +63,8 @@ farm_base_SRCS = \
 
 farm_test_SRCS = \
 			src/farm/requirements/matcher_registry_tests.cpp \
-			src/farm/requirements/matchers_tests.cpp
+			src/farm/requirements/matchers_tests.cpp \
+			src/farm/compiler/regex_error_parser_tests.cpp
 
 PROGRAMS = \
 			util-test \
@@ -98,7 +103,8 @@ farm_base_LIBS = boost_system \
 					boost_thread \
 					boost_regex \
 					boost_program_options \
-					boost_filesystem
+					boost_filesystem \
+					boost_regex
 
 farm-test_SRCS = \
 			${farm_base_SRCS} \

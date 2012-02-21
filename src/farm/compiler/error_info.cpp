@@ -6,12 +6,14 @@
 namespace farm {
 
 ErrorInfo::ErrorInfo(level_t lvl, const std::string& message)
-	: _level(lvl), _row(-1), _column(-1), _message(message)
+	: _level(lvl), _line(-1), _column(-1), _message(message)
 {}
 
-ErrorInfo::ErrorInfo(level_t lvl, int row, int column,
+ErrorInfo::ErrorInfo(level_t lvl,
+						const std::string& file,
+						int row, int column,
 						const std::string& message)
-	: _level(lvl), _row(row), _column(column),
+	: _level(lvl), _file(file), _line(row), _column(column),
 	  _message(message)
 {}
 
@@ -20,7 +22,7 @@ ErrorInfo::~ErrorInfo ()
 
 bool ErrorInfo::has_position () const
 {
-	return _row >= 0 && _column >= 0;
+	return _line >= 0 && _column >= 0;
 }
 
 ErrorInfo::level_t ErrorInfo::get_level () const
@@ -28,9 +30,14 @@ ErrorInfo::level_t ErrorInfo::get_level () const
 	return _level;
 }
 
-int ErrorInfo::get_row () const
+const std::string& ErrorInfo::get_file () const
 {
-	return _row;
+	return _file;
+}
+
+int ErrorInfo::get_line () const
+{
+	return _line;
 }
 
 int ErrorInfo::get_column () const
@@ -61,8 +68,11 @@ std::ostream& operator<< (std::ostream& os, ErrorInfo::level_t lvl)
 std::ostream& operator<< (std::ostream& os, const ErrorInfo& err)
 {
 	os << err.get_level() << ": ";
+	if (!err.get_file().empty()) {
+		os << err.get_file() << ": ";
+	}
 	if (err.has_position()) {
-		os << err.get_row() << ":" << err.get_column() << ": ";
+		os << err.get_line() << ":" << err.get_column() << ": ";
 	}
 	os << err.get_message();
 	return os;
