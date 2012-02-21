@@ -11,7 +11,8 @@ util_HDRS = \
 			src/util/process/child_options.hpp \
 			src/util/process/parent.hpp \
 			src/util/process/stream_id.hpp \
-			src/util/process/_detail/zero_terminated.hpp
+			src/util/process/_detail/zero_terminated.hpp \
+			src/util/string/expand.hpp
 
 util_SRCS = \
 			src/util/memstream.cpp \
@@ -22,7 +23,8 @@ util_SRCS = \
 			src/util/process/child_options.cpp \
 			src/util/process/parent.cpp \
 			src/util/process/stream_id.cpp \
-			src/util/process/_detail/zero_terminated.cpp
+			src/util/process/_detail/zero_terminated.cpp \
+			src/util/string/expand.cpp
 
 farm_base_HDRS = \
 			${util_HDRS} \
@@ -81,9 +83,10 @@ util-test_SRCS = ${util_SRCS} \
 				 src/util/memstream_tests.cpp \
 				 src/util/ansi/colors_tests.cpp \
 				 src/util/buffer/appendable_buffer_tests.cpp \
-				 src/util/process/_detail/zero_terminated_tests.cpp
+				 src/util/process/_detail/zero_terminated_tests.cpp \
+				 src/util/string/expand_tests.cpp
 
-util-test_LIBS = boost_system boost_thread boost_unit_test_framework
+util-test_LIBS = boost_system boost_thread boost_unit_test_framework boost_regex
 
 child-process_SRCS = \
 				src/util/process/_test/child_process.cpp
