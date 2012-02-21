@@ -3,7 +3,7 @@
  */
 
 #include <farm/jobs/order.hpp>
-#include <farm/requirements/requirement.hpp>
+#include <farm/compiler/description.hpp>
 
 namespace farm {
 
@@ -18,10 +18,10 @@ JobOrder::JobOrder (const uuid& id)
 {}
 
 JobOrder::JobOrder (const uuid& id,
-					const vector<requirements::Requirement>& reqs,
+					const vector<CompilerDescription>& compilers,
 					const string& source_code,
 					const string& input)
-	: _id(id), _requirements(reqs), _code(source_code), _input(input)
+	: _id(id), _compilers(compilers), _code(source_code), _input(input)
 {}
 
 JobOrder::~JobOrder ()
@@ -32,9 +32,14 @@ const uuid& JobOrder::get_id () const
 	return _id;
 }
 
-const vector<requirements::Requirement>& JobOrder::get_requirements () const
+vector<CompilerDescription>& JobOrder::get_compilers ()
 {
-	return _requirements;
+	return _compilers;
+}
+
+const vector<CompilerDescription>& JobOrder::get_compilers () const
+{
+	return _compilers;
 }
 
 const string& JobOrder::get_code () const
