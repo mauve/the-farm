@@ -20,6 +20,9 @@ public:
 	void reset ();
 	void move_to (std::vector<char>& result);
 
+	const char* begin () const;
+	const char* end () const;
+
 	boost::asio::mutable_buffers_1 get_appendable_buffer (std::size_t buf_size);
 	void report_appended (std::size_t num_filled);
 

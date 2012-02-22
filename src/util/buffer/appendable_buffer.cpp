@@ -36,6 +36,16 @@ void appendable_buffer::move_to (std::vector<char>& result)
 	_filled_size = 0;
 }
 
+const char* appendable_buffer::begin () const
+{
+	return &*_buffer.begin ();
+}
+
+const char* appendable_buffer::end () const
+{
+	return &*_buffer.end ();
+}
+
 boost::asio::mutable_buffers_1 appendable_buffer::get_appendable_buffer (std::size_t buf_size)
 {
 	if ((_buffer.size() - _filled_size) < buf_size)

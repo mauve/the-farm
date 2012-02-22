@@ -21,6 +21,8 @@ class JobResult;
 
 }  // namespace jobs
 
+class CompilerRunnerConfig;
+
 class CompilerRunner
 {
 public:
@@ -30,7 +32,9 @@ public:
 	~CompilerRunner ();
 
 	// TODO: capability to wait for result
-	void run_job (boost::shared_ptr<jobs::JobOrder> order, const job_callback_t& cb);
+	void run_job (boost::shared_ptr<jobs::JobOrder> order,
+					boost::shared_ptr<CompilerRunnerConfig> runner_config,
+					const job_callback_t& cb);
 
 private:
 	struct running_child_t;

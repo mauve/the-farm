@@ -51,11 +51,13 @@ farm_base_SRCS = \
 			${util_SRCS} \
 			src/farm/agent/agent.cpp \
 			src/farm/agent/controller.cpp \
+			src/farm/compiler/configured_runner_config.cpp \
 			src/farm/compiler/description.cpp \
 			src/farm/compiler/error_info.cpp \
 			src/farm/compiler/error_parser.cpp \
 			src/farm/compiler/regex_error_parser.cpp \
 			src/farm/compiler/requirement.cpp \
+			src/farm/compiler/runner_config.cpp \
 			src/farm/compiler/runner.cpp \
 			src/farm/jobs/order.cpp \
 			src/farm/jobs/result.cpp \
@@ -68,6 +70,7 @@ farm_base_SRCS = \
 farm_test_SRCS = \
 			src/farm/requirements/matcher_registry_tests.cpp \
 			src/farm/requirements/matchers_tests.cpp \
+			src/farm/compiler/configured_runner_config_tests.cpp \
 			src/farm/compiler/regex_error_parser_tests.cpp
 
 PROGRAMS = \
@@ -101,7 +104,7 @@ colors-test_SRCS = \
 process-test_SRCS = ${util_SRCS} \
 				src/util/process/_test/process_tests.cpp
 
-process-test_LIBS = boost_system boost_thread
+process-test_LIBS = boost_system boost_thread boost_regex
 process-test_INCLUDES = src
 process-test_DEFINES = CHILD_PROCESS_PATH="\"`pwd`/bin/Debug/child-process\""
 

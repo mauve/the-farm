@@ -3,11 +3,14 @@
 
 #include <util/process/child.hpp>
 #include <util/buffer/appendable_buffer.hpp>
+#include <util/iostream/imemstream.hpp>
 
 #include <farm/jobs/order.hpp>
 #include <farm/jobs/result.hpp>
 #include <farm/compiler/error_info.hpp>
+#include <farm/compiler/error_parser.hpp>
 #include <farm/compiler/description.hpp>
+#include <farm/compiler/configured_runner_config.hpp>
 
 #include <fstream>
 
@@ -33,6 +36,7 @@ struct CompilerRunner::running_child_t
 	{}
 
 	shared_ptr<jobs::JobOrder> order;
+	shared_ptr<CompilerRunnerConfig> runner_config;
 	fs::path jobdir;
 	shared_ptr<jobs::JobResult> result;
 	proc::parent::child_pointer child;
@@ -52,7 +56,9 @@ CompilerRunner::~CompilerRunner ()
 	_parent.stop_all();
 }
 
-void CompilerRunner::run_job(shared_ptr<jobs::JobOrder> order, const job_callback_t& cb)
+void CompilerRunner::run_job(shared_ptr<jobs::JobOrder> order,
+								shared_ptr<CompilerRunnerConfig> runner_config,
+								const job_callback_t& cb)
 {
 	//
 	// write input files
@@ -77,16 +83,15 @@ void CompilerRunner::run_job(shared_ptr<jobs::JobOrder> order, const job_callbac
 	fs::path output_path(tmp / "binary.exe");
 
 	// build command line
-	proc::child_options opts("gcc");
-	opts.add_arg("-o").
-		 add_arg(output_path.string()).
-		 add_arg(code_path.string()).
+	proc::child_options opts(runner_config->get_path());
+	opts.set_args(runner_config->get_arguments(code_path.string(), output_path.string())).
 		 set_stream_behaviour(proc::stream_id::standard_in, proc::child_options::close).
 		 set_stream_behaviour(proc::stream_id::standard_out, proc::child_options::pipe_write).
 		 set_stream_behaviour(proc::stream_id::standard_err, proc::child_options::pipe_write);
 
 	shared_ptr<running_child_t> child_data = boost::make_shared<running_child_t>();
 	child_data->order = order;
+	child_data->runner_config = runner_config;
 	child_data->jobdir = tmp;
 	child_data->callback = cb;
 	child_data->child =
@@ -129,13 +134,31 @@ void CompilerRunner::_on_child_stopped(proc::parent::child_pointer child, shared
 		cd.compilation_done = true;
 
 	// actually supposed to start the process now, let's ignore that now
-	std::vector<ErrorInfo> errors;
-	if (child->exit_code() != 0) {
-		errors.push_back (ErrorInfo(ErrorInfo::error, "Compilation failed"));
-	}
-
 	// TODO: find the compiler which is being used
 	CompilerDescription compiler_desc("gcc", "4.2-mac", Version(4, 2, 0, 0));
+
+	std::vector<ErrorInfo> errors;
+	{
+		std::string line;
+		util::imemstream ims(cd.stdout_buf.begin(), cd.stdout_buf.end());
+		while (std::getline(ims, line))
+			cd.runner_config->get_error_parser().parse_line(line);
+		errors = cd.runner_config->get_error_parser().parsed_errors();
+	}
+
+	{
+		std::string line;
+		util::imemstream ims(cd.stderr_buf.begin(), cd.stderr_buf.end());
+		while (std::getline(ims, line))
+			cd.runner_config->get_error_parser().parse_line(line);
+		errors.insert(errors.end(),
+						cd.runner_config->get_error_parser().parsed_errors().begin(),
+						cd.runner_config->get_error_parser().parsed_errors().end());
+	}
+
+	if (child->exit_code() != 0 && errors.empty()) {
+		errors.push_back (ErrorInfo(ErrorInfo::error, "Compilation failed"));
+	}
 
 	cd.result.reset(new jobs::JobResult(boost::uuids::nil_uuid(),
 											compiler_desc,
