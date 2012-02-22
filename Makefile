@@ -6,6 +6,7 @@ util_HDRS = \
 			src/util/memstream.hpp \
 			src/util/ansi/colors.hpp \
 			src/util/buffer/appendable_buffer.hpp \
+			src/util/iostream/imemstream.hpp \
 			src/util/posix/pipe.hpp \
 			src/util/process/child.hpp \
 			src/util/process/child_options.hpp \
@@ -18,6 +19,7 @@ util_SRCS = \
 			src/util/memstream.cpp \
 			src/util/ansi/colors.cpp \
 			src/util/buffer/appendable_buffer.cpp \
+			src/util/iostream/imemstream.cpp \
 			src/util/posix/pipe.cpp \
 			src/util/process/child.cpp \
 			src/util/process/child_options.cpp \
@@ -83,6 +85,7 @@ util-test_SRCS = ${util_SRCS} \
 				 src/util/memstream_tests.cpp \
 				 src/util/ansi/colors_tests.cpp \
 				 src/util/buffer/appendable_buffer_tests.cpp \
+				 src/util/iostream/imemstream_tests.cpp \
 				 src/util/process/_detail/zero_terminated_tests.cpp \
 				 src/util/string/expand_tests.cpp
 
