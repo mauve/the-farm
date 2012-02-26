@@ -7,26 +7,39 @@ util_HDRS = \
 			src/util/ansi/colors.hpp \
 			src/util/buffer/appendable_buffer.hpp \
 			src/util/iostream/imemstream.hpp \
+			src/util/iostream/readfile.hpp \
 			src/util/posix/pipe.hpp \
 			src/util/process/child.hpp \
 			src/util/process/child_options.hpp \
+			src/util/process/native_process_id.hpp \
 			src/util/process/parent.hpp \
+			src/util/process/stream_descriptor.hpp \
 			src/util/process/stream_id.hpp \
+			src/util/process/_detail/spawner_posix_spawn.hpp \
+			src/util/process/_detail/spawner.hpp \
 			src/util/process/_detail/zero_terminated.hpp \
 			src/util/string/expand.hpp
+
+util_stupidtest_HDRS = \
+			src/util/stupidtest/stupidtest.hpp
 
 util_SRCS = \
 			src/util/memstream.cpp \
 			src/util/ansi/colors.cpp \
 			src/util/buffer/appendable_buffer.cpp \
 			src/util/iostream/imemstream.cpp \
+			src/util/iostream/readfile.cpp \
 			src/util/posix/pipe.cpp \
 			src/util/process/child.cpp \
 			src/util/process/child_options.cpp \
 			src/util/process/parent.cpp \
 			src/util/process/stream_id.cpp \
+			src/util/process/_detail/spawner.cpp \
 			src/util/process/_detail/zero_terminated.cpp \
 			src/util/string/expand.cpp
+
+util_stupidtest_SRCS = \
+			src/util/stupidtest/stupidtest.cpp 
 
 farm_base_HDRS = \
 			${util_HDRS} \
@@ -78,6 +91,8 @@ PROGRAMS = \
 			child-process \
 			process-test \
 			colors-test \
+			compiler-runner-test \
+			stupidtest-test \
 			farm-test \
 			farm
 
@@ -101,12 +116,31 @@ colors-test_SRCS = \
 				src/util/ansi/colors.cpp \
 				src/util/ansi/_test/colors_test.cpp
 
-process-test_SRCS = ${util_SRCS} \
+compiler-runner-test_SRCS = \
+				${util_stupidtest_SRCS} \
+				${farm_base_SRCS} \
+				src/farm/compiler/_test/compiler_runner_tests.cpp
+
+compiler-runner-test_LIBS = \
+				boost_system \
+				boost_thread \
+				boost_regex \
+				boost_filesystem
+
+process-test_SRCS = \
+				${util_SRCS} \
+				${util_stupidtest_SRCS} \
 				src/util/process/_test/process_tests.cpp
 
 process-test_LIBS = boost_system boost_thread boost_regex
 process-test_INCLUDES = src
 process-test_DEFINES = CHILD_PROCESS_PATH="\"`pwd`/bin/Debug/child-process\""
+
+stupidtest-test_LIBS = boost_unit_test_framework
+stupidtest-test_SRCS = \
+				src/util/util_test.cpp \
+				src/util/stupidtest/stupidtest_tests.cpp \
+				${util_stupidtest_SRCS}
 
 farm_base_LIBS = boost_system \
 					boost_thread \
