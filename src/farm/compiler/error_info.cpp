@@ -69,12 +69,14 @@ std::ostream& operator<< (std::ostream& os, const ErrorInfo& err)
 {
 	os << err.get_level() << ": ";
 	if (!err.get_file().empty()) {
-		os << err.get_file() << ": ";
+		os << err.get_file() << ":";
 	}
-	if (err.has_position()) {
-		os << err.get_line() << ":" << err.get_column() << ": ";
+	if (err.get_line() >= 0) {
+		os << err.get_line() << ":";
+		if (err.get_column() >= 0)
+			os << err.get_column() << ":";
 	}
-	os << err.get_message();
+	os << " " << err.get_message();
 	return os;
 }
 

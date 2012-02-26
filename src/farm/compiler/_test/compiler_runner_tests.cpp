@@ -160,6 +160,13 @@ void test_run_compiler2 (boost::asio::io_service& io_service)
 	ST_CHECK(!!res);
 	ST_CHECK(!res->succeeded());
 	ST_CHECK(!res->messages().empty());
+
+	const std::vector<ErrorInfo>& errors = res->messages();
+	for (std::vector<ErrorInfo>::const_iterator iter = errors.begin();
+			iter != errors.end(); ++iter)
+	{
+		std::cout << "[message found] " << *iter << std::endl;
+	}
 }
 
 void thread_runner (boost::asio::io_service& io_service)
