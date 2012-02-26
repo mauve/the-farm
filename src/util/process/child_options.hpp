@@ -5,6 +5,7 @@
 #include <vector>
 #include <map>
 #include <string>
+#include <iosfwd>
 
 #include "stream_id.hpp"
 
@@ -51,6 +52,8 @@ private:
 	std::map<std::string, std::string> _env;
 	std::map<stream_id, stream_behaviour> _streams;
 };
+
+std::ostream& operator<< (std::ostream& os, const child_options& opts);
 
 }  // namespace process
 

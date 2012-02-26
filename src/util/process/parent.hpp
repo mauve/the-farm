@@ -8,6 +8,7 @@
 #include <boost/thread/mutex.hpp>
 #include <boost/thread/condition_variable.hpp>
 #include <boost/smart_ptr/shared_ptr.hpp>
+#include <boost/system/error_code.hpp>
 
 #include <list>
 
@@ -18,6 +19,7 @@ namespace process {
 class child;
 class child_options;
 
+// TODO: inherit from enable_shared_from_this
 class parent
 {
 public:
@@ -28,7 +30,9 @@ public:
 	~parent ();
 
 	/* return true if child started successfully */
-	child_pointer start_child (const child_options& opts, const child_callback_t& cb);
+	child_pointer start_child (const child_options& opts,
+								const child_callback_t& cb,
+								boost::system::error_code& ec);
 
 	void stop_all ();
 	void join_all ();
@@ -36,7 +40,7 @@ public:
 
 private:
 	void queue_signal_handler ();
-	void on_signal(int signal_number);
+	void on_signal(const boost::system::error_code&, int signal_number);
 
 private:
 	boost::asio::io_service& _io_service;

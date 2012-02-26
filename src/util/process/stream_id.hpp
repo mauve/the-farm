@@ -2,6 +2,8 @@
 #ifndef UTIL_PROCESS_STREAM_ID_HPP_
 #define UTIL_PROCESS_STREAM_ID_HPP_
 
+#include <iosfwd>
+
 namespace util {
 
 namespace process {
@@ -30,6 +32,8 @@ private:
 bool operator== (const stream_id&, const stream_id&);
 bool operator!= (const stream_id&, const stream_id&);
 bool operator<  (const stream_id&, const stream_id&);
+
+std::ostream& operator<< (std::ostream& os, const stream_id&);
 
 }  // namespace process
 

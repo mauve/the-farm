@@ -1,6 +1,9 @@
 
 #include "child_options.hpp"
 
+#include <iostream>
+#include <iterator>
+
 namespace util {
 
 namespace process {
@@ -86,6 +89,19 @@ const std::vector<std::string> child_options::get_formatted_env () const
 const std::map<stream_id, child_options::stream_behaviour>& child_options::get_stream_behaviours () const
 {
 	return _streams;
+}
+
+/*
+ *
+ */
+std::ostream& operator<< (std::ostream& os, const child_options& opts)
+{
+	os << "cmd='" << opts.get_command() << "' ( ";
+	std::copy(opts.get_args().begin(),
+				opts.get_args().end(),
+				std::ostream_iterator<std::string>(os, " "));
+	os << ")";
+	return os;
 }
 
 }  // namespace process

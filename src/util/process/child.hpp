@@ -7,11 +7,10 @@
 #include <boost/thread/mutex.hpp>
 #include <boost/thread/condition_variable.hpp>
 #include <boost/asio/io_service.hpp>
-#include <boost/asio/posix/stream_descriptor.hpp>
 
-#include "child_options.hpp"
-
-#include <sys/types.h>
+#include <util/process/stream_descriptor.hpp>
+#include <util/process/child_options.hpp>
+#include <util/process/native_process_id.hpp>
 
 namespace util {
 
@@ -22,9 +21,6 @@ class parent;
 class child
 {
 public:
-	typedef boost::asio::posix::stream_descriptor stream_descriptor;
-	typedef pid_t process_id;
-
 	child (boost::asio::io_service& io_service,
 			parent& p,
 			const child_options& opts);
@@ -38,7 +34,7 @@ public:
 	void stop ();
 	void wait ();
 
-	process_id get_pid () const;
+	native_process_id get_pid () const;
 
 	const child_options& get_options () const;
 
@@ -57,7 +53,7 @@ private:
 	child_options _opts;
 	mutable boost::mutex _mutex;
 	boost::condition_variable _cond;
-	process_id _pid;
+	native_process_id _pid;
 	bool _detach;
 	bool _running;
 	bool _exited;

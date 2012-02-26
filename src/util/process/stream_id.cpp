@@ -2,6 +2,7 @@
 #include "stream_id.hpp"
 
 #include <cstdio>
+#include <iostream>
 
 namespace util {
 
@@ -47,6 +48,17 @@ bool operator!= (const stream_id& l, const stream_id& r)
 bool operator< (const stream_id& l, const stream_id& r)
 {
 	return l.native() < r.native();
+}
+
+std::ostream& operator<< (std::ostream& os, const stream_id& id)
+{
+	if (id == stream_id::standard_in)
+		return os << id.native() << " (stdin)";
+	if (id == stream_id::standard_out)
+		return os << id.native() << " (stdout)";
+	if (id == stream_id::standard_err)
+		return os << id.native() << " (stderr)";
+	return os << id.native();
 }
 
 }  // namespace process

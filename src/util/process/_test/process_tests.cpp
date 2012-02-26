@@ -8,45 +8,14 @@
 #include <util/process/parent.hpp>
 #include <util/process/child.hpp>
 #include <util/process/child_options.hpp>
+#include <util/stupidtest/stupidtest.hpp>
+
 #include <boost/thread.hpp>
 
 using util::process::parent;
 using util::process::child;
 using util::process::child_options;
-
-struct check_exception
-{};
-
-bool verbose = false;
-
-#define CHECK(x) \
-	if (verbose) { \
-		std::cerr << "   Check: " << #x << ": " << std::flush; \
-	} \
-	if (!(x)) { \
-		if (!verbose) \
-			std::cerr << "Check failed: " << #x << std::endl; \
-		else \
-			std::cerr << "failed." << std::endl; \
-		throw check_exception(); \
-	} else if (verbose) { \
-		std::cerr << "succeeded." << std::endl; \
-	}
-
-#define RUN_TEST(x) \
-	try { \
-		std::cerr << "Running test: " << #x << std::endl; \
-		x; \
-		std::cerr << "   ...succeeded" << std::endl; \
-		\
-	} catch (const check_exception&) { \
-		std::cerr << "   ...failed" << std::endl; \
-		return 1; \
-	} catch (const std::exception& ex) { \
-		std::cerr << "   ...exception: " << ex.what() << std::endl; \
-		return 1; \
-	}
-
+using util::process::stream_descriptor;
 
 
 struct child_callback
@@ -217,17 +186,20 @@ void test_start_child_process (boost::asio::io_service& io_service)
 	parent p(io_service);
 
 	child_callback callback;
-	parent::child_pointer child = p.start_child(child_options(CHILD_PROCESS_PATH), boost::ref(callback));
-	CHECK(!!child);
-	CHECK(child->get_pid());
+	boost::system::error_code ec;
+	parent::child_pointer child =
+			p.start_child(child_options(CHILD_PROCESS_PATH), boost::ref(callback), ec);
+	ST_CHECK(!!child);
+	ST_CHECK(child->get_pid());
+	ST_CHECK(!ec);
 
 	callback.wait();
-	CHECK(callback.has_been_called());
+	ST_CHECK(callback.has_been_called());
 
 	child = callback.get_child();
-	CHECK(!!child);
-	CHECK(!child->is_running());
-	CHECK(child->exit_code() == 0);
+	ST_CHECK(!!child);
+	ST_CHECK(!child->is_running());
+	ST_CHECK(child->exit_code() == 0);
 
 	return;
 }
@@ -240,17 +212,21 @@ void test_start_child_process_ignore_stderr_and_stdout (boost::asio::io_service&
 	child_options opts(CHILD_PROCESS_PATH);
 	opts.set_stream_behaviour(util::process::stream_id::standard_out, child_options::close);
 	opts.set_stream_behaviour(util::process::stream_id::standard_err, child_options::close);
-	parent::child_pointer child = p.start_child(opts, boost::ref(callback));
-	CHECK(!!child);
-	CHECK(child->get_pid());
+
+	boost::system::error_code ec;
+	parent::child_pointer child =
+			p.start_child(opts, boost::ref(callback), ec);
+	ST_CHECK(!!child);
+	ST_CHECK(child->get_pid());
+	ST_CHECK(!ec);
 
 	callback.wait();
-	CHECK(callback.has_been_called());
+	ST_CHECK(callback.has_been_called());
 
 	child = callback.get_child();
-	CHECK(!!child);
-	CHECK(!child->is_running());
-	CHECK(child->exit_code() == 0);
+	ST_CHECK(!!child);
+	ST_CHECK(!child->is_running());
+	ST_CHECK(child->exit_code() == 0);
 
 	return;
 }
@@ -260,17 +236,22 @@ void test_start_child_process_return_code (boost::asio::io_service& io_service)
 	parent p(io_service);
 
 	child_callback callback;
-	parent::child_pointer child = p.start_child(child_options(CHILD_PROCESS_PATH).add_arg("2"), boost::ref(callback));
-	CHECK(!!child);
-	CHECK(child->get_pid());
+
+	boost::system::error_code ec;
+	parent::child_pointer child =
+			p.start_child(child_options(CHILD_PROCESS_PATH).add_arg("2"),
+					boost::ref(callback), ec);
+	ST_CHECK(!!child);
+	ST_CHECK(child->get_pid());
+	ST_CHECK(!ec);
 
 	callback.wait();
-	CHECK(callback.has_been_called());
+	ST_CHECK(callback.has_been_called());
 
 	child = callback.get_child();
-	CHECK(!!child);
-	CHECK(!child->is_running());
-	CHECK(child->exit_code() == 1);
+	ST_CHECK(!!child);
+	ST_CHECK(!child->is_running());
+	ST_CHECK(child->exit_code() == 1);
 
 	return;
 }
@@ -282,26 +263,30 @@ void test_start_child_process_read_stdout (boost::asio::io_service& io_service)
 	child_callback callback;
 	child_options opts(CHILD_PROCESS_PATH);
 	opts.set_stream_behaviour(util::process::stream_id::standard_out, child_options::pipe_write);
-	parent::child_pointer child = p.start_child(opts, boost::ref(callback));
-	CHECK(!!child);
-	CHECK(child->get_pid());
 
-	child::stream_descriptor& standard_out = child->get_stream(util::process::stream_id::standard_out);
+	boost::system::error_code ec;
+	parent::child_pointer child =
+			p.start_child(opts, boost::ref(callback), ec);
+	ST_CHECK(!!child);
+	ST_CHECK(child->get_pid());
+	ST_CHECK(!ec);
+
+	stream_descriptor& standard_out = child->get_stream(util::process::stream_id::standard_out);
 	read_callback read_cb;
 	standard_out.async_read_some(boost::asio::buffer(read_cb.raw_data(), read_callback::data_size),
 									boost::bind(boost::ref(read_cb), _1, _2));
 
 	read_cb.wait();
-	CHECK(read_cb.has_been_called());
-	CHECK(read_cb.data_read() == "Hello World!\n");
+	ST_CHECK(read_cb.has_been_called());
+	ST_CHECK(read_cb.data_read() == "Hello World!\n");
 
 	callback.wait();
-	CHECK(callback.has_been_called());
+	ST_CHECK(callback.has_been_called());
 
 	child = callback.get_child();
-	CHECK(!!child);
-	CHECK(!child->is_running());
-	CHECK(child->exit_code() == 0);
+	ST_CHECK(!!child);
+	ST_CHECK(!child->is_running());
+	ST_CHECK(child->exit_code() == 0);
 
 	return;
 }
@@ -316,35 +301,38 @@ void test_start_child_process_read_stdout_and_stderr (boost::asio::io_service& i
 	opts.set_stream_behaviour(util::process::stream_id::standard_err, child_options::pipe_write);
 	opts.add_arg("4");
 
-	parent::child_pointer child = p.start_child(opts, boost::ref(callback));
-	CHECK(!!child);
-	CHECK(child->get_pid());
+	boost::system::error_code ec;
+	parent::child_pointer child =
+			p.start_child(opts, boost::ref(callback), ec);
+	ST_CHECK(!!child);
+	ST_CHECK(child->get_pid());
+	ST_CHECK(!ec);
 
-	child::stream_descriptor& standard_out = child->get_stream(util::process::stream_id::standard_out);
+	stream_descriptor& standard_out = child->get_stream(util::process::stream_id::standard_out);
 	read_callback read_stdout;
 	standard_out.async_read_some(boost::asio::buffer(read_stdout.raw_data(), read_callback::data_size),
 									boost::bind(boost::ref(read_stdout), _1, _2));
 
-	child::stream_descriptor& standard_err = child->get_stream(util::process::stream_id::standard_err);
+	stream_descriptor& standard_err = child->get_stream(util::process::stream_id::standard_err);
 	read_callback read_stderr;
 	standard_err.async_read_some(boost::asio::buffer(read_stderr.raw_data(), read_callback::data_size),
 									boost::bind(boost::ref(read_stderr), _1, _2));
 
 	read_stdout.wait();
-	CHECK(read_stdout.has_been_called());
-	CHECK(read_stdout.data_read() == "Hello Out World!\n");
+	ST_CHECK(read_stdout.has_been_called());
+	ST_CHECK(read_stdout.data_read() == "Hello Out World!\n");
 
 	read_stderr.wait();
-	CHECK(read_stderr.has_been_called());
-	CHECK(read_stderr.data_read() == "Hello Err World!\n");
+	ST_CHECK(read_stderr.has_been_called());
+	ST_CHECK(read_stderr.data_read() == "Hello Err World!\n");
 
 	callback.wait();
-	CHECK(callback.has_been_called());
+	ST_CHECK(callback.has_been_called());
 
 	child = callback.get_child();
-	CHECK(!!child);
-	CHECK(!child->is_running());
-	CHECK(child->exit_code() == 0);
+	ST_CHECK(!!child);
+	ST_CHECK(!child->is_running());
+	ST_CHECK(child->exit_code() == 0);
 
 	return;
 }
@@ -360,64 +348,68 @@ void test_start_child_process_write_stdin_and_read_stdout_and_stderr (boost::asi
 	opts.set_stream_behaviour(util::process::stream_id::standard_err, child_options::pipe_write);
 	opts.add_arg("3");
 
-	parent::child_pointer child = p.start_child(opts, boost::ref(callback));
-	CHECK(!!child);
-	CHECK(child->get_pid());
+	boost::system::error_code ec;
+	parent::child_pointer child =
+		p.start_child(opts, boost::ref(callback), ec);
+	ST_CHECK(!!child);
+	ST_CHECK(child->get_pid());
+	ST_CHECK(!ec);
 
-	child::stream_descriptor& standard_in = child->get_stream(util::process::stream_id::standard_in);
+	stream_descriptor& standard_in = child->get_stream(util::process::stream_id::standard_in);
 	write_callback write_stdin("Smurf\n");
 	standard_in.async_write_some(boost::asio::buffer(write_stdin.raw_data(), write_stdin.data_size()),
 									boost::bind(boost::ref(write_stdin), _1, _2));
 
-	child::stream_descriptor& standard_out = child->get_stream(util::process::stream_id::standard_out);
+	stream_descriptor& standard_out = child->get_stream(util::process::stream_id::standard_out);
 	read_callback read_stdout;
 	standard_out.async_read_some(boost::asio::buffer(read_stdout.raw_data(), read_callback::data_size),
 									boost::bind(boost::ref(read_stdout), _1, _2));
 
-	child::stream_descriptor& standard_err = child->get_stream(util::process::stream_id::standard_err);
+	stream_descriptor& standard_err = child->get_stream(util::process::stream_id::standard_err);
 	read_callback read_stderr;
 	standard_err.async_read_some(boost::asio::buffer(read_stderr.raw_data(), read_callback::data_size),
 									boost::bind(boost::ref(read_stderr), _1, _2));
 
 	write_stdin.wait();
-	CHECK(write_stdin.has_been_called());
-	CHECK(write_stdin.bytes_written() == 6);
+	ST_CHECK(write_stdin.has_been_called());
+	ST_CHECK(write_stdin.bytes_written() == 6);
 
 	read_stdout.wait();
-	CHECK(read_stdout.has_been_called());
-	CHECK(read_stdout.data_read() == "Smurf\n");
+	ST_CHECK(read_stdout.has_been_called());
+	ST_CHECK(read_stdout.data_read() == "Smurf\n");
 
 	read_stderr.wait();
-	CHECK(read_stderr.has_been_called());
-	CHECK(read_stderr.data_read() == "Smurf\n");
+	ST_CHECK(read_stderr.has_been_called());
+	ST_CHECK(read_stderr.data_read() == "Smurf\n");
 
 	callback.wait();
-	CHECK(callback.has_been_called());
+	ST_CHECK(callback.has_been_called());
 
 	child = callback.get_child();
-	CHECK(!!child);
-	CHECK(!child->is_running());
-	CHECK(child->exit_code() == 0);
+	ST_CHECK(!!child);
+	ST_CHECK(!child->is_running());
+	ST_CHECK(child->exit_code() == 0);
 
 	return;
 }
 
 int main (int argc, char* argv[])
 {
-	verbose = true;
 	std::cout << "CHILD_PROCESS_PATH=" << CHILD_PROCESS_PATH << std::endl;
+
+	util::stupidtest::setup("process_tests", false);
 
 	boost::asio::io_service io_service;
 	boost::asio::io_service::work* work = new boost::asio::io_service::work(io_service);
 	boost::thread io_thread(thread_runner, boost::ref(io_service));
 
 	try {
-		RUN_TEST(test_start_child_process(io_service));
-		RUN_TEST(test_start_child_process_ignore_stderr_and_stdout(io_service));
-		RUN_TEST(test_start_child_process_return_code(io_service));
-		RUN_TEST(test_start_child_process_read_stdout(io_service));
-		RUN_TEST(test_start_child_process_read_stdout_and_stderr(io_service));
-		RUN_TEST(test_start_child_process_write_stdin_and_read_stdout_and_stderr(io_service));
+		ST_RUN_TEST(test_start_child_process(io_service));
+		ST_RUN_TEST(test_start_child_process_ignore_stderr_and_stdout(io_service));
+		ST_RUN_TEST(test_start_child_process_return_code(io_service));
+		ST_RUN_TEST(test_start_child_process_read_stdout(io_service));
+		ST_RUN_TEST(test_start_child_process_read_stdout_and_stderr(io_service));
+		ST_RUN_TEST(test_start_child_process_write_stdin_and_read_stdout_and_stderr(io_service));
 	} catch (...) {
 		delete work;
 		io_thread.join ();

@@ -23,11 +23,15 @@ parent::~parent()
 	detach_all();
 }
 
-parent::child_pointer parent::start_child (const child_options& opts, const child_callback_t& cb)
+parent::child_pointer parent::start_child (const child_options& opts,
+											const child_callback_t& cb,
+											boost::system::error_code& ec)
 {
 	boost::unique_lock<boost::mutex> lock(_mutex);
 	child_pointer c(new child(_io_service, *this, opts));
-	if (!c->start()) {
+
+	ec = c->start ();
+	if (!ec) {
 		// started successfully
 		_children.push_back(std::make_pair(c, cb));
 		return c;
@@ -64,14 +68,15 @@ void parent::detach_all ()
 
 void parent::queue_signal_handler()
 {
+	// std::cerr << "queue_signal_handler" << std::endl;
 	_signal_set.async_wait(
-			boost::bind(&parent::on_signal, this, _2)
+			boost::bind(&parent::on_signal, this, _1, _2)
 		);
 }
 
-void parent::on_signal(int signal_number)
+void parent::on_signal(const boost::system::error_code& ec, int signal_number)
 {
-	if (signal_number != SIGCHLD)
+	if (ec || signal_number != SIGCHLD)
 		return;
 
 	boost::unique_lock<boost::mutex> lock(_mutex);
@@ -80,6 +85,7 @@ void parent::on_signal(int signal_number)
 	pid_t pid;
     while ((pid = waitpid(-1, &status, WNOHANG)) > 0)
     {
+    	// std::cerr << "on_signal: ec=" << ec << " pid=" << pid << std::endl;
     	child_list_t::iterator iter = _children.begin();
     	for (; iter != _children.end(); ++iter)
     	{
@@ -94,7 +100,9 @@ void parent::on_signal(int signal_number)
     			child->report_stopped(status);
 
     			child_callback_t& cb = iter->second;
+    			// std::cerr << "on_signal: calling callback..." << std::endl;
     			cb(child);
+    			// std::cerr << "on_signal: ...callback done" << std::endl;
 
     			_children.erase(iter);
     		}
