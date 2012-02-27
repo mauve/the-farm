@@ -1,4 +1,6 @@
-
+/*
+ * Copyright (C) 2012, All rights reserved, Mikael Olenfalk <mikael@olenfalk.se>
+ */
 
 #ifndef FARM_REQUIREMENTS_REQUIREMENT_HPP_
 #define FARM_REQUIREMENTS_REQUIREMENT_HPP_

@@ -1,3 +1,6 @@
+/*
+ * Copyright (C) 2012, All rights reserved, Mikael Olenfalk <mikael@olenfalk.se>
+ */
 
 #ifndef UTIL_STRING_EXPAND_HPP_
 #define UTIL_STRING_EXPAND_HPP_

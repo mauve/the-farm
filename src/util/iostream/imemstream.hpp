@@ -1,3 +1,6 @@
+/*
+ * Copyright (C) 2012, All rights reserved, Mikael Olenfalk <mikael@olenfalk.se>
+ */
 
 #ifndef UTIL_IOSTREAM_IMEMSTREAM_HPP_
 #define UTIL_IOSTREAM_IMEMSTREAM_HPP_

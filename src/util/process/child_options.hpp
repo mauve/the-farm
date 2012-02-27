@@ -1,3 +1,6 @@
+/*
+ * Copyright (C) 2012, All rights reserved, Mikael Olenfalk <mikael@olenfalk.se>
+ */
 
 #ifndef UTIL_PROCESS_CHILD_OPTIONS_HPP_
 #define UTIL_PROCESS_CHILD_OPTIONS_HPP_

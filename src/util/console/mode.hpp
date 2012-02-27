@@ -1,8 +1,5 @@
 /*
- * mode.hpp
- *
- *  Created on: Feb 27, 2012
- *      Author: olenfalk
+ * Copyright (C) 2012, All rights reserved, Mikael Olenfalk <mikael@olenfalk.se>
  */
 
 #ifndef UTIL_CONSOLE_MODE_HPP_

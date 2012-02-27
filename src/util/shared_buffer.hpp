@@ -1,3 +1,6 @@
+/*
+ * Copyright (C) 2012, All rights reserved, Mikael Olenfalk <mikael@olenfalk.se>
+ */
 
 #ifndef UTIL_SHARED_BUFFER_HPP_
 #define UTIL_SHARED_BUFFER_HPP_
@@ -7,23 +10,6 @@
 #include <boost/asio/buffer.hpp>
 
 namespace util {
-
-//class shared_mutable_buffer
-//{
-//public:
-//	explicit shared_mutable_buffer (std::size_t capacity);
-//
-//	const char* data () const;
-//	std::size_t size () const;
-//
-//	boost::asio::mutable_buffer append_reserve (std::size_t required);
-//	void report_appended (std::size_t size);
-//#error PROCEED HERE
-//
-//private:
-//	boost::shared_array<char> _data;
-//	std::size_t _capacity, _size;
-//};
 
 // A reference-counted non-modifiable buffer class.
 class shared_const_buffer

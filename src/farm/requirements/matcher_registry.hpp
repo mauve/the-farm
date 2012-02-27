@@ -1,3 +1,6 @@
+/*
+ * Copyright (C) 2012, All rights reserved, Mikael Olenfalk <mikael@olenfalk.se>
+ */
 
 #ifndef FARM_REQUIREMENTS_MATCHER_REGISTRY_HPP_
 #define FARM_REQUIREMENTS_MATCHER_REGISTRY_HPP_
