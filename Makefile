@@ -6,6 +6,8 @@ util_HDRS = \
 			src/util/memstream.hpp \
 			src/util/ansi/colors.hpp \
 			src/util/buffer/appendable_buffer.hpp \
+			src/util/console/console.hpp \
+			src/util/console/mode.hpp \
 			src/util/iostream/imemstream.hpp \
 			src/util/iostream/readfile.hpp \
 			src/util/posix/pipe.hpp \
@@ -27,6 +29,8 @@ util_SRCS = \
 			src/util/memstream.cpp \
 			src/util/ansi/colors.cpp \
 			src/util/buffer/appendable_buffer.cpp \
+			src/util/console/console.cpp \
+			src/util/console/mode.cpp \
 			src/util/iostream/imemstream.cpp \
 			src/util/iostream/readfile.cpp \
 			src/util/posix/pipe.cpp \
@@ -89,6 +93,7 @@ farm_test_SRCS = \
 PROGRAMS = \
 			util-test \
 			child-process \
+			console-test \
 			process-test \
 			colors-test \
 			compiler-runner-test \
@@ -111,6 +116,11 @@ util-test_LIBS = boost_system boost_thread boost_unit_test_framework boost_regex
 
 child-process_SRCS = \
 				src/util/process/_test/child_process.cpp
+
+console-test_SRCS = \
+				src/util/console/console.cpp \
+				src/util/console/mode.cpp \
+				src/util/console/_test/console_test.cpp
 
 colors-test_SRCS = \
 				src/util/ansi/colors.cpp \
