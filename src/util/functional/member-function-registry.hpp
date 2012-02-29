@@ -53,6 +53,8 @@ private:
 	boost::any _value;
 };
 
+struct ignore {};
+
 /*
  * member_function_registry is a class which automatically generates trampolines.
  *
@@ -123,16 +125,23 @@ template <
 	class ArgumentParser,
 	class ArgumentPack,
 	class ReturnParser,
-	class Context,
-	class FunctionKey = std::string>
+	class FunctionKey = std::string,
+	class Context = ignore>
 class member_function_registry
 {
 public:
+	const static bool has_context = !boost::is_same<Context, ignore>::value;
+
 	typedef typename ReturnParser::return_type return_type;
 
 	member_function_registry ()
 	{
 		// do nothing
+	}
+
+	bool has_function (typename boost::call_traits<FunctionKey>::param_type name) const
+	{
+		return _invokers.find(name) != _invokers.end();
 	}
 
 	template <typename Function>
@@ -141,23 +150,26 @@ public:
 	{
 		_invokers[name] =
 				boost::bind (
-						& invoker<
+						& pre_invoker<
 								Function,
 								/* From */
-								typename boost::mpl::next<
-											typename boost::mpl::next<
-													typename boost::mpl::begin< boost::function_types::parameter_types<Function> >::type
-												>::type
-											>::type,
+								typename boost::mpl::advance_c<
+									typename boost::mpl::begin< boost::function_types::parameter_types<Function> >::type,
+									has_context ? 2 : 1
+								>::type,
 								/* To */
-								typename boost::mpl::end< boost::function_types::parameter_types<Function> >::type
+								typename boost::mpl::end< boost::function_types::parameter_types<Function> >::type,
+								Context
 							> ::
 							template apply<boost::fusion::nil>,
 						f, _1, _2, _3, _4,
 						boost::fusion::nil());
 	}
 
-	return_type call (Class* instance, Context& ctx, typename boost::call_traits<FunctionKey>::param_type name, const ArgumentPack& pack = ArgumentPack())
+	return_type call (Class* instance,
+		  typename boost::call_traits<FunctionKey>::param_type name,
+		  const ArgumentPack& pack = ArgumentPack(),
+		  Context* ctx = 0)
 	{
 		typename function_map::iterator invoker = _invokers.find(name);
 		if (invoker == _invokers.end())
@@ -170,7 +182,11 @@ public:
 		return ret_parser.result ();
 	}
 
-	void call (Class* instance, Context& ctx, typename boost::call_traits<FunctionKey>::param_type name, ReturnParser& ret_parser, const ArgumentPack& pack = ArgumentPack())
+	void call (Class* instance,
+			typename boost::call_traits<FunctionKey>::param_type name,
+			ReturnParser& ret_parser,
+			const ArgumentPack& pack = ArgumentPack(),
+			Context* ctx = 0)
 	{
 		typename function_map::iterator invoker = _invokers.find(name);
 		if (invoker == _invokers.end())
@@ -184,24 +200,48 @@ private:
 	template <
 			typename Function,
 			class From,
+			class To,
+			class ActualContext
+		>
+	struct pre_invoker
+	{
+		template <typename Args>
+		static inline
+		void apply (Function f, Class* instance, Context* ctx, ArgumentParser& arg_parser, ReturnParser& ret_parser, const Args& args)
+		{
+			pre_invoker::apply (f, ctx, arg_parser, ret_parser, boost::fusion::push_back( args, instance ));
+		}
+
+		template <typename Args>
+		static inline
+		void apply (Function f, Context* ctx, ArgumentParser& arg_parser, ReturnParser& ret_parser, const Args& args)
+		{
+			invoker<Function, From, To>::apply (f, arg_parser, ret_parser, boost::fusion::push_back( args, boost::ref(*ctx) ));
+		}
+	};
+
+	template <
+			typename Function,
+			class From,
+			class To
+		>
+	struct pre_invoker<Function, From, To, ignore>
+	{
+		template <typename Args>
+		static inline
+		void apply (Function f, Class* instance, Context* ctx, ArgumentParser& arg_parser, ReturnParser& ret_parser, const Args& args)
+		{
+			invoker<Function, From, To>::apply (f, arg_parser, ret_parser, boost::fusion::push_back( args, instance ));
+		}
+	};
+
+	template <
+			typename Function,
+			class From,
 			class To
 		>
 	struct invoker
 	{
-		template <typename Args>
-		static inline
-		void apply (Function f, Class* instance, Context& ctx, ArgumentParser& arg_parser, ReturnParser& ret_parser, const Args& args)
-		{
-			invoker::apply (f, ctx, arg_parser, ret_parser, boost::fusion::push_back( args, instance ));
-		}
-
-		template <typename Args>
-		static inline
-		void apply (Function f, Context& ctx, ArgumentParser& arg_parser, ReturnParser& ret_parser, const Args& args)
-		{
-			invoker::apply (f, arg_parser, ret_parser, boost::fusion::push_back( args, boost::ref(ctx) ));
-		}
-
 		template <typename Args>
 		static inline
 		void apply (Function f, ArgumentParser& arg_parser, ReturnParser& ret_parser, const Args& args)
@@ -216,20 +256,6 @@ private:
 	template <typename Function, class To>
 	struct invoker<Function, To, To>
 	{
-		template <typename Args>
-		static inline
-		void apply (Function f, Class* instance, Context& ctx, ArgumentParser& arg_parser, ReturnParser& ret_parser, const Args& args)
-		{
-			invoker::apply (f, ctx, arg_parser, ret_parser, boost::fusion::push_back( args, instance ));
-		}
-
-		template <typename Args>
-		static inline
-		void apply (Function f, Context& ctx, ArgumentParser& arg_parser, ReturnParser& ret_parser, const Args& args)
-		{
-			invoker::apply (f, arg_parser, ret_parser, boost::fusion::push_back( args, boost::ref(ctx) ) );
-		}
-
 		template <typename Args>
 		static inline
 		void apply (Function f, ArgumentParser& arg_parser, ReturnParser& ret_parser, const Args& args)
@@ -264,7 +290,7 @@ private:
 		}
 	};
 
-	typedef typename boost::function<void (Class*, Context&, ArgumentParser&, ReturnParser&)> invoker_function_type;
+	typedef typename boost::function<void (Class*, Context*, ArgumentParser&, ReturnParser&)> invoker_function_type;
 	typedef typename std::map<FunctionKey, invoker_function_type> function_map;
 
 	function_map _invokers;
