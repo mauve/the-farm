@@ -20,20 +20,23 @@ class console;
 class mode
 {
 public:
-	class registration;
+	friend class console; // for attach, detach
 
-	mode (const std::string& default_prompt = "> ");
+	mode (const std::string& __default_prompt = "> ");
 	virtual ~mode ();
 
 	virtual std::string prompt ();
-
-	registration attach (console& con);
-	void detach (); // no need to call this yourself
 
 	virtual bool handle_command (const std::string& cmd,
 			const std::vector<std::string>& args) = 0;
 
 protected:
+	virtual void before_detach ();
+	virtual void after_attach ();
+
+	void detach ();
+
+	// throws if unattached
 	console& con ();
 
 	std::ostream& out ();
@@ -41,27 +44,12 @@ protected:
 	std::istream& in ();
 
 private:
+	void attach (console& con);
+
 	std::string _default_prompt;
-	std::ostream* _out,* _err;
-	std::istream* _in;
+	std::ostream _null_out, _null_err;
+	std::istream _null_in;
 	console* _con;
-};
-
-class mode::registration
-{
-public:
-	friend class mode;
-
-	registration ();
-	~registration ();
-
-	void detach ();
-
-private:
-	registration (mode& m);
-
-	struct impl;
-	boost::shared_ptr<impl> _pimpl;
 };
 
 }  // namespace console

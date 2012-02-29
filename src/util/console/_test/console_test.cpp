@@ -7,8 +7,10 @@
 #include <stdexcept>
 
 #include <boost/lexical_cast.hpp>
+#include <boost/smart_ptr/make_shared.hpp>
 
 #include <util/console/console.hpp>
+#include <util/console/auto_mode.hpp>
 
 class TestMode :
 	public util::console::mode
@@ -40,12 +42,38 @@ public:
 	}
 };
 
+class TestMode2 :
+	public util::console::auto_mode<TestMode2>
+{
+public:
+	TestMode2 ()
+		: util::console::auto_mode<TestMode2>(this, std::string("2> "))
+	{
+		register_function("add", &TestMode2::add);
+		register_function("sub", &TestMode2::sub);
+	}
+
+private:
+	int add(int a, int b)
+	{
+		return a + b;
+	}
+
+	int sub(int a, int b)
+	{
+		return a - b;
+	}
+};
+
 int main (int argc, char* argv[])
 {
 	util::console::console console;
 
-	TestMode mode;
-	util::console::mode::registration reg = console.enter_mode(mode);
+	console.enter_mode(boost::make_shared<TestMode>());
+
+	console.run();
+
+	console.enter_mode(boost::make_shared<TestMode2>());
 
 	console.run();
 

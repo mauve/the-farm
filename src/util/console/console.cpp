@@ -6,6 +6,7 @@
 
 #include <iostream>
 #include <boost/tokenizer.hpp>
+#include <boost/bind.hpp>
 
 namespace util {
 
@@ -16,17 +17,29 @@ console::console ()
 
 console::~console()
 {
-	while (!_modes.empty())
-	{
-		mode* m = _modes.top();
-		m->detach();
-	}
+	std::for_each(_modes.rend(), _modes.rbegin(),
+			boost::bind(&mode::detach, _1));
 }
 
-mode::registration console::enter_mode (mode& m)
+void console::enter_mode (boost::shared_ptr<mode> m)
 {
-	_modes.push(&m);
-	return m.attach(*this);
+	_modes.push_back(m);
+	m->attach(*this);
+}
+
+std::ostream& console::out ()
+{
+	return std::cout;
+}
+
+std::ostream& console::err ()
+{
+	return std::cerr;
+}
+
+std::istream& console::in ()
+{
+	return std::cin;
 }
 
 void console::quit (int exit_code)
@@ -41,10 +54,10 @@ int console::run ()
 	_quit = false;
 	while (!_quit && !_modes.empty())
 	{
-		mode& current_mode = *_modes.top();
-		std::cout << current_mode.prompt();
+		mode& current_mode = *_modes.back();
+		out() << current_mode.prompt();
 		std::string input;
-		if (std::getline (std::cin, input))
+		if (std::getline (in(), input))
 		{
 			typedef boost::escaped_list_separator<char> separator_t;
 			typedef boost::tokenizer<separator_t> tokenizer_t;
@@ -57,16 +70,15 @@ int console::run ()
 			std::string command = *begin++;
 			std::vector<std::string> args(begin, end);
 
-			// TODO: check if handled
 			try {
 				if (!current_mode.handle_command(command, args))
-					std::cerr << "Error: Unknown Command: '" << command << "'" << std::endl;
+					err() << "Error: Unknown Command: '" << command << "'" << std::endl;
 			} catch (const std::exception& ex) {
-				std::cerr << "Exception: " << ex.what() << std::endl;
+				err() << "Exception: " << ex.what() << std::endl;
 			}
 
-			std::cout << std::flush;
-			std::cerr << std::flush;
+			out() << std::flush;
+			err() << std::flush;
 		}
 	}
 
@@ -75,8 +87,13 @@ int console::run ()
 
 void console::leave_mode (mode& m)
 {
-	if (_modes.top() == &m) {
-		_modes.pop();
+	for (std::vector<boost::shared_ptr<mode> >::iterator iter = _modes.begin();
+			iter != _modes.end(); ++iter)
+	{
+		if ((*iter).get() == &m) {
+			_modes.erase(iter);
+			return;
+		}
 	}
 }
 

@@ -13,10 +13,8 @@ namespace console {
 
 mode::mode (const std::string& default_prompt)
 	: _default_prompt(default_prompt),
-	  _out(&std::cout),
-	  _err(&std::cerr),
-	  _in(&std::cin),
-	  _con(0)
+	  _null_out(0), _null_err(0),
+	  _null_in(0), _con(0)
 {
 }
 
@@ -30,12 +28,12 @@ std::string mode::prompt ()
 	return _default_prompt;
 }
 
-mode::registration mode::attach (console& con)
+void mode::attach (console& con)
 {
 	detach ();
 	_con = &con;
 
-	return registration(*this);
+	after_attach();
 }
 
 console& mode::con ()
@@ -48,17 +46,23 @@ console& mode::con ()
 
 std::ostream& mode::out ()
 {
-	return *_out;
+	if (_con)
+		return _con->out();
+	return _null_out;
 }
 
 std::ostream& mode::err ()
 {
-	return *_err;
+	if (_con)
+		return _con->err();
+	return _null_err;
 }
 
 std::istream& mode::in ()
 {
-	return *_in;
+	if (_con)
+		return _con->in();
+	return _null_in;
 }
 
 void mode::detach ()
@@ -66,49 +70,19 @@ void mode::detach ()
 	if (!_con)
 		return;
 
+	before_detach();
 	_con->leave_mode(*this);
 	_con = 0;
 }
 
-/*
- * registration
- */
-
-struct mode::registration::impl
+void mode::before_detach ()
 {
-	impl (mode& m)
-		: _mode(&m)
-	{}
+	/* default impl does nothing */
+}
 
-	~impl ()
-	{
-		detach ();
-	}
-
-	void detach ()
-	{
-		if (_mode)
-			_mode->detach ();
-	}
-
-	mode* _mode;
-};
-
-mode::registration::registration ()
-{}
-
-mode::registration::registration (mode& m)
-	: _pimpl(new impl(m))
-{}
-
-mode::registration::~registration ()
-{}
-
-void mode::registration::detach ()
+void mode::after_attach ()
 {
-	if (_pimpl)
-		_pimpl->detach ();
-	_pimpl.reset ();
+	/* default impl does nothing */
 }
 
 }  // namespace console
