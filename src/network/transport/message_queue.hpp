@@ -10,14 +10,19 @@
 #include <deque>
 #include <boost/asio/buffer.hpp>
 #include <boost/function.hpp>
+#include <boost/noncopyable.hpp>
 
 namespace network {
 
 namespace transport {
 
-class message_queue
+class message_queue :
+	public boost::noncopyable
 {
 public:
+	message_queue ();
+	~message_queue ();
+
 	// return true if the queue was empty
 	// before the add operation
 	bool add (message::const_pointer msg);
@@ -29,18 +34,7 @@ public:
 	boost::asio::const_buffer buffer () const;
 
 private:
-	struct item {
-		enum { header, payload } state;
-		message::header hdr;
-		message::const_pointer msg;
-		boost::uint32_t remains;
-
-		item (message::const_pointer msg);
-
-		boost::asio::const_buffer buffer () const;
-
-		bool consume (std::size_t& num_bytes);
-	};
+	struct item;
 	std::deque<item> _queue;
 };
 

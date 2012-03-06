@@ -18,6 +18,20 @@ namespace network {
 
 namespace transport {
 
+struct message_queue::item
+{
+	enum { header, payload } state;
+	message::header hdr;
+	message::const_pointer msg;
+	boost::uint32_t remains;
+
+	item (message::const_pointer msg);
+
+	boost::asio::const_buffer buffer () const;
+
+	bool consume (std::size_t& num_bytes);
+};
+
 message_queue::item::item (message::const_pointer _msg)
 	: state(header),
 	  hdr(_msg->get_header()),
@@ -51,6 +65,12 @@ bool message_queue::item::consume (std::size_t& num_bytes)
 		return true;
 	}
 }
+
+message_queue::message_queue ()
+{}
+
+message_queue::~message_queue ()
+{}
 
 boost::asio::const_buffer message_queue::item::buffer () const
 {
