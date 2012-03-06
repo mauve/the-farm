@@ -12,7 +12,7 @@ namespace network {
 namespace transport {
 
 using boost::unique_lock;
-using boost::mutex;
+using boost::recursive_mutex;
 
 namespace _detail {
 
@@ -56,7 +56,7 @@ public:
 
 	void close_production ()
 	{
-		unique_lock<mutex> lock(_mutex);
+		unique_lock<recursive_mutex> lock(_mutex);
 		if (_closed)
 			return;
 
@@ -70,7 +70,7 @@ public:
 
 	bool is_closed ()
 	{
-		unique_lock<mutex> lock(_mutex);
+		unique_lock<recursive_mutex> lock(_mutex);
 		return _closed;
 	}
 
@@ -92,7 +92,7 @@ public:
 	boost::uint32_t _opcode;
 	boost::uint32_t _conversation_id;
 	subscription_sink::on_unsubscribed _on_unsubscribed;
-	boost::mutex _mutex;
+	boost::recursive_mutex _mutex;
 	bool _closed;
 };
 
@@ -112,24 +112,30 @@ message_passer::message_passer (connection::pointer conn)
 {
 	if (!_connection)
 		throw std::invalid_argument("connection cannot be null");
-
-	_on_message_connection = _connection->connect_on_message(boost::bind(&message_passer::_on_message_received,
-																			shared_from_this(),
-																			_1,
-																			_2));
 }
 
 message_passer::~message_passer()
 {}
 
-boost::signals2::connection message_passer::connect_on_request(const on_request::slot_type& cb)
+void message_passer::start ()
 {
-	return _on_request.connect(cb);
+	// TODO: probably requires protection against double-start
+	_connection->start ();
+
+	_on_message_connection = _connection->connect_on_message(boost::bind(&message_passer::_on_message_received,
+																			shared_from_this(),
+																			_1));
+
 }
 
-boost::signals2::connection message_passer::connect_on_subscription_request(const on_subscription_request::slot_type& cb)
+message_passer::callback_connection message_passer::connect_on_request(boost::uint32_t opcode, const on_request& cb)
 {
-	return _on_subscription_request.connect(cb);
+	return _request_handlers.connect(opcode, cb);
+}
+
+message_passer::callback_connection message_passer::connect_on_subscription_request(boost::uint32_t opcode, const on_subscription_request& cb)
+{
+	return _subscription_handlers.connect(opcode, cb);
 }
 
 void message_passer::request (boost::uint32_t opcode, const on_reply& cb)
@@ -147,7 +153,7 @@ void message_passer::subscribe (boost::uint32_t opcode,
 {
 	boost::uint32_t cookie = 0;
 	{
-		unique_lock<mutex> lock(_mutex);
+		unique_lock<recursive_mutex> lock(_mutex);
 		if (_subscriptions.find(opcode) != _subscriptions.end())
 			throw std::invalid_argument ("double subscription");
 
@@ -202,7 +208,7 @@ void message_passer::_do_request (message::const_pointer msg, const on_reply& cb
 {
 	_connection->send(msg);
 
-	unique_lock<mutex> lock(_mutex);
+	unique_lock<recursive_mutex> lock(_mutex);
 	_outstanding_requests.insert(std::make_pair(msg->get_header().conversation_id, cb));
 }
 
@@ -220,7 +226,7 @@ void message_passer::_on_subscribe_reply(message::const_pointer msg,
 	}
 
 	{
-		unique_lock<mutex> lock(_mutex);
+		unique_lock<recursive_mutex> lock(_mutex);
 		_subscriptions.insert(std::make_pair(opcode, on_data));
 	}
 
@@ -233,7 +239,7 @@ void message_passer::_request_sent (connection::pointer, message::const_pointer 
 
 boost::uint32_t message_passer::bake_cookie ()
 {
-	unique_lock<mutex> lock(_mutex);
+	unique_lock<recursive_mutex> lock(_mutex);
 	return _bake_cookie ();
 }
 
@@ -242,75 +248,84 @@ boost::uint32_t message_passer::_bake_cookie ()
 	return ++_last_cookie;
 }
 
-void message_passer::_on_message_received(connection::pointer conn, message::const_pointer msg)
+void message_passer::_on_message_received(message::const_pointer msg)
 {
 	const message::header& hdr = msg->get_header();
 	switch (hdr.message_type)
 	{
 		case message::message_notification: {
-			unique_lock<mutex> lock(_mutex);
+			unique_lock<recursive_mutex> lock(_mutex);
 			subscription_map::iterator iter = _subscriptions.find(hdr.opcode);
 			if (iter == _subscriptions.end())
 				return;
 
-			lock.unlock(); // do not want to hold lock during callback
 			iter->second(msg);
 			break;
 		}
 
 		case message::message_request: {
+			unique_lock<recursive_mutex> lock(_mutex);
+			message::pointer reply;
 			try {
-				boost::optional<message::pointer> reply = _on_request(msg);
+				reply = _request_handlers.get_callback(hdr.opcode) (msg);
+			} catch (const util::functional::no_such_callback&) {
+				reply = create_reply(hdr, message::error_invalid_operation);
+			} catch (const std::exception& ex) {
+				reply = create_reply(hdr, message::error_internal_error);
+			}
 
-				if (reply.is_initialized())
-				{
-					_connection->send(*reply);
-				} else {
-					_connection->send(create_reply(hdr, message::error_invalid_operation));
-				}
+			try {
+				_connection->send(reply);
 			} catch (const std::exception& ex) {
 				try {
-					_connection->send(create_reply(msg->get_header(), message::error_internal_error));
+					_connection->send(create_reply(hdr, message::error_internal_error));
 				} catch (...) {
 					// at this point there is no recovery,
 					// so let's just ignore any errors
 				}
 			}
+			break;
 		}
 
 		case message::message_subscribe_request: {
 			{
-				unique_lock<mutex> lock(_mutex);
-				if (_productions.find(hdr.opcode) != _productions.end())
-				{
+				unique_lock<recursive_mutex> lock(_mutex);
+				if (_productions.find(hdr.opcode) != _productions.end()) {
 					_connection->send(create_reply(hdr, message::error_invalid_subscription));
+					return;
 				}
-			}
 
-			subscription_sink sink(shared_from_this(), hdr.opcode, hdr.conversation_id);
-			_on_subscription_request(msg, sink);
-			if (sink.is_closed())
-			{
-				_connection->send(create_reply(hdr, message::error_invalid_subscription));
-			}
-			else
-			{
-				unique_lock<mutex> lock(_mutex);
-				_productions.insert(std::make_pair(hdr.opcode, sink._pimpl));
-				_connection->send(create_reply(hdr, message::error_success));
+				message::pointer reply;
+				try {
+					subscription_sink sink(shared_from_this(), hdr.opcode, hdr.conversation_id);
+					message::error_codes ec = _subscription_handlers.get_callback(hdr.opcode) (msg, sink);
+
+					if (ec == message::error_success) {
+						_productions.insert(std::make_pair(hdr.opcode, sink._pimpl));
+						reply = create_reply(hdr, message::error_success);
+					} else {
+						reply = create_reply(hdr, ec);
+					}
+				} catch (const util::functional::no_such_callback&) {
+					reply = create_reply(hdr, message::error_invalid_subscription);
+				} catch (const std::exception& ex) {
+					reply = create_reply(hdr, message::error_internal_error);
+				}
+				_connection->send(reply);
 			}
 			break;
 		}
 
 		case message::message_unsubscribe_request: {
 			{
-				unique_lock<mutex> lock(_mutex);
+				unique_lock<recursive_mutex> lock(_mutex);
 				productions_map::iterator iter = _productions.find (hdr.opcode);
 				if (iter != _productions.end()) {
-					_productions.erase(iter);
 					boost::shared_ptr<_detail::subscription_sink_impl> sink = iter->second.lock();
-					if (sink)
+					_productions.erase(iter);
+					if (sink) {
 						sink->raise_unsubscribe();
+					}
 				}
 			}
 
@@ -327,13 +342,14 @@ void message_passer::_on_message_received(connection::pointer conn, message::con
 			// used interchangeably, we do not
 			// care just now
 		case message::message_response: {
-			unique_lock<mutex> lock(_mutex);
+			unique_lock<recursive_mutex> lock(_mutex);
 			request_map::iterator iter = _outstanding_requests.find(hdr.conversation_id);
 			if (iter == _outstanding_requests.end())
 				return;
 
+			request_map::value_type iter_val(*iter);
 			_outstanding_requests.erase(iter);
-			iter->second(msg);
+			iter_val.second(msg);
 			break;
 		}
 
@@ -347,7 +363,7 @@ void message_passer::unsubscribe(boost::uint32_t opcode)
 {
 	boost::uint32_t cookie = 0;
 	{
-		unique_lock<mutex> lock(_mutex);
+		unique_lock<recursive_mutex> lock(_mutex);
 		_subscriptions.erase(opcode);
 		cookie = _bake_cookie();
 	}
@@ -367,10 +383,12 @@ void message_passer::produce(message::const_pointer msg)
 
 void message_passer::close_production(boost::uint32_t opcode, boost::uint32_t conversation_id)
 {
-	unique_lock<mutex> lock(_mutex);
+	unique_lock<recursive_mutex> lock(_mutex);
 	productions_map::iterator iter = _productions.find(opcode);
 	if (iter == _productions.end())
 		return;
+
+	_productions.erase(opcode);
 
 	message::header hdr(conversation_id,
 						opcode,
@@ -424,6 +442,9 @@ bool operator< (const subscription_handle& left, const subscription_handle& righ
  * subscription_sink
  */
 
+subscription_sink::subscription_sink()
+{}
+
 subscription_sink::subscription_sink(message_passer::pointer owner, boost::uint32_t opcode, boost::uint32_t conversation_id)
 	: _pimpl(new _detail::subscription_sink_impl(owner, opcode, conversation_id))
 {}
@@ -433,21 +454,29 @@ subscription_sink::~subscription_sink()
 
 boost::uint32_t subscription_sink::get_opcode () const
 {
+	if (!_pimpl)
+		return 0;
 	return _pimpl->_opcode;
 }
 
 boost::uint32_t subscription_sink::get_conversation_id () const
 {
+	if (!_pimpl)
+		return 0;
 	return _pimpl->_conversation_id;
 }
 
 boost::signals2::connection subscription_sink::connect_on_unsubscribed(const on_unsubscribed::slot_type& cb)
 {
+	if (!_pimpl)
+		throw std::invalid_argument("sink closed");
 	return _pimpl->_on_unsubscribed.connect(cb);
 }
 
 void subscription_sink::produce(boost::uint32_t error_code)
 {
+	if (!_pimpl)
+		throw std::invalid_argument("sink closed");
 	message::header hdr(_pimpl->_conversation_id,
 						_pimpl->_opcode,
 						message::message_notification,
@@ -457,16 +486,22 @@ void subscription_sink::produce(boost::uint32_t error_code)
 
 void subscription_sink::produce(message::const_pointer msg)
 {
+	if (!_pimpl)
+		throw std::invalid_argument("sink closed");
 	_pimpl->produce(msg);
 }
 
 void subscription_sink::close ()
 {
+	if (!_pimpl)
+		return;
 	_pimpl->close_production();
 }
 
 bool subscription_sink::is_closed ()
 {
+	if (!_pimpl)
+		return true;
 	return _pimpl->is_closed();
 }
 
@@ -478,6 +513,39 @@ bool operator==(const subscription_sink& left, const subscription_sink& right)
 bool operator< (const subscription_sink& left, const subscription_sink& right)
 {
 	return left._pimpl < right._pimpl;
+}
+
+/*
+ * simple_production
+ */
+simple_production::simple_production (message_passer::pointer mp, boost::uint32_t opcode)
+	: _opcode(opcode)
+{
+	_con = mp->connect_on_subscription_request(
+					opcode,
+					boost::bind(&simple_production::_on_subscribe,
+							this, _1, _2));
+}
+
+simple_production::~simple_production()
+{}
+
+boost::uint32_t simple_production::get_opcode() const
+{
+	return _opcode;
+}
+
+message::error_codes simple_production::_on_subscribe(message::const_pointer msg, subscription_sink sink)
+{
+	_sink = sink;
+	return message::error_success;
+}
+
+void simple_production::produce(boost::uint32_t error_code)
+{
+	if (_sink.is_closed())
+		return;
+	_sink.produce(error_code);
 }
 
 }  // namespace transport

@@ -90,6 +90,32 @@ farm_test_SRCS = \
 			src/farm/compiler/configured_runner_config_tests.cpp \
 			src/farm/compiler/regex_error_parser_tests.cpp
 
+network_SRCS = \
+			src/network/protocol/dispatcher.cpp \
+			src/network/protocol/node_item.cpp \
+			src/network/protocol/payload_serializer.cpp \
+			src/network/protocol/payload_stream.cpp \
+			src/network/transport/connection.cpp \
+			src/network/transport/message.cpp \
+			src/network/transport/message_passer.cpp \
+			src/network/transport/message_queue.cpp \
+			src/network/transport/tcp_connection.cpp
+
+network_HDRS = \
+			src/network/protocol/_detail/arg_parser.hpp \
+			src/network/protocol/_detail/return_parser.hpp \
+			src/network/protocol/dispatcher.hpp \
+			src/network/protocol/node_item.hpp \
+			src/network/protocol/payload.hpp \
+			src/network/protocol/payload_serializer.hpp \
+			src/network/protocol/payload_stream.hpp \
+			src/network/transport/connection.hpp \
+			src/network/transport/message.hpp \
+			src/network/transport/message_passer.hpp \
+			src/network/transport/message_queue.hpp \
+			src/network/transport/serialize.hpp \
+			src/network/transport/tcp_connection.hpp
+
 PROGRAMS = \
 			util-test \
 			child-process \
@@ -98,6 +124,7 @@ PROGRAMS = \
 			colors-test \
 			compiler-runner-test \
 			stupidtest-test \
+			network-test \
 			farm-test \
 			farm
 
@@ -152,6 +179,14 @@ stupidtest-test_SRCS = \
 				src/util/stupidtest/stupidtest_tests.cpp \
 				${util_stupidtest_SRCS}
 
+network-test_SRCS = \
+			${network_SRCS} \
+			src/network/transport/message_passer_tests.cpp \
+			src/network/transport/mock_connection.cpp \
+			src/util/memstream.cpp \
+			src/network/network_test.cpp
+network-test_LIBS = boost_system boost_thread boost_unit_test_framework
+
 farm_base_LIBS = boost_system \
 					boost_thread \
 					boost_regex \
@@ -168,6 +203,7 @@ farm-test_LIBS = ${farm_base_LIBS} boost_unit_test_framework
 
 farm_SRCS = \
 			${farm_base_SRCS} \
+			${network_SRCS} \
 			main.cpp
 
 farm_LIBS = ${farm_base_LIBS}

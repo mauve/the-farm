@@ -7,7 +7,7 @@
 
 #include "message.hpp"
 
-#include <list>
+#include <deque>
 #include <boost/asio/buffer.hpp>
 #include <boost/function.hpp>
 
@@ -41,7 +41,7 @@ private:
 
 		bool consume (std::size_t& num_bytes);
 	};
-	std::list<item> _queue;
+	std::deque<item> _queue;
 };
 
 }  // namespace transport

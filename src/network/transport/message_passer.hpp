@@ -12,7 +12,9 @@
 #include <boost/cstdint.hpp>
 #include <boost/smart_ptr/enable_shared_from_this2.hpp>
 #include <boost/smart_ptr/shared_ptr.hpp>
-#include <boost/thread/mutex.hpp>
+#include <boost/thread/recursive_mutex.hpp>
+
+#include <util/functional/callback_map.hpp>
 
 namespace network {
 
@@ -33,11 +35,12 @@ class message_passer :
 	public boost::enable_shared_from_this2<message_passer>
 {
 public:
+	typedef util::functional::callback_connection callback_connection;
 	typedef boost::shared_ptr<message_passer> pointer;
 
-	typedef boost::signals2::signal<message::pointer (message::const_pointer)> on_request;
+	typedef boost::function<message::pointer (message::const_pointer)> on_request;
 	typedef boost::function<void (message::const_pointer msg)> on_reply;
-	typedef boost::signals2::signal<void (message::const_pointer msg, subscription_sink)> on_subscription_request;
+	typedef boost::function<message::error_codes (message::const_pointer msg, subscription_sink)> on_subscription_request;
 	typedef boost::function<void (message::const_pointer msg, subscription_handle)> on_subscription_reply;
 	typedef on_reply on_notification;
 
@@ -45,8 +48,11 @@ public:
 
 	static pointer create (connection::pointer);
 
-	boost::signals2::connection connect_on_request (const on_request::slot_type& cb);
-	boost::signals2::connection connect_on_subscription_request (const on_subscription_request::slot_type& cb);
+	void start ();
+	void stop ();
+
+	callback_connection connect_on_request (boost::uint32_t opcode, const on_request& cb);
+	callback_connection connect_on_subscription_request (boost::uint32_t opcode, const on_subscription_request& cb);
 
 	void request (boost::uint32_t opcode, const on_reply& cb);
 
@@ -78,7 +84,7 @@ private:
 
 	boost::uint32_t bake_cookie ();
 	boost::uint32_t _bake_cookie (); // does not lock
-	void _on_message_received (connection::pointer conn, message::const_pointer);
+	void _on_message_received (message::const_pointer);
 
 	void unsubscribe (boost::uint32_t opcode);
 	void produce (message::const_pointer notification);
@@ -92,7 +98,7 @@ private:
 	on_request _on_request;
 	on_subscription_request _on_subscription_request;
 
-	mutable boost::mutex _mutex;
+	mutable boost::recursive_mutex _mutex;
 	boost::uint32_t _last_cookie;
 
 	typedef std::map<boost::uint32_t, on_reply> request_map;
@@ -101,6 +107,8 @@ private:
 	subscription_map _subscriptions; // key is opcode
 	typedef std::map<boost::uint32_t, boost::weak_ptr<_detail::subscription_sink_impl> > productions_map;
 	productions_map _productions; // key is opcode
+	util::functional::callback_map<boost::uint32_t, message::pointer (message::const_pointer)> _request_handlers;
+	util::functional::callback_map<boost::uint32_t, message::error_codes (message::const_pointer msg, subscription_sink)> _subscription_handlers;
 };
 
 class subscription_handle
@@ -129,6 +137,7 @@ class subscription_sink
 public:
 	typedef boost::signals2::signal<void ()> on_unsubscribed;
 
+	subscription_sink ();
 	~subscription_sink ();
 
 	boost::uint32_t get_opcode () const;
@@ -157,6 +166,27 @@ private:
 
 private:
 	boost::shared_ptr<_detail::subscription_sink_impl> _pimpl;
+};
+
+class simple_production
+{
+public:
+	simple_production (message_passer::pointer mp, boost::uint32_t opcode);
+	~simple_production ();
+
+	boost::uint32_t get_opcode () const;
+
+	void produce (boost::uint32_t error_code);
+
+	template <typename Payload>
+	void produce (boost::uint32_t error_code, const Payload& payload);
+
+private:
+	message::error_codes _on_subscribe (message::const_pointer msg, subscription_sink);
+
+	boost::uint32_t _opcode;
+	message_passer::callback_connection _con;
+	subscription_sink _sink;
 };
 
 /*
@@ -215,6 +245,18 @@ void subscription_sink::produce(boost::uint32_t error_code, const Payload& paylo
 	util::memory_output_stream mos(msg->get_data(), msg->get_payload_length());
 	ser.serialize(mos);
 	produce(msg);
+}
+
+/*
+ * simple_production
+ */
+
+template <typename Payload>
+void simple_production::produce(boost::uint32_t error_code, const Payload& payload)
+{
+	if (_sink.is_closed())
+		return;
+	_sink.produce(error_code, payload);
 }
 
 }  // namespace transport
