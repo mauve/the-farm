@@ -25,7 +25,7 @@ bool readfile (std::ifstream& ifs, std::vector<char>& buf,
 {
 	ifs.seekg(0, std::ifstream::end);
 	std::size_t size = ifs.tellg();
-	ifs.seekg(0, std::ifstream::end);
+	ifs.seekg(0, std::ifstream::beg);
 
 	if (max_size && (max_size > size))
 		size = max_size;

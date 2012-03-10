@@ -210,6 +210,7 @@ farm_SRCS = \
 farm_LIBS = ${farm_base_LIBS}
 
 copyright-fixer_SRCS = \
+			src/util/iostream/readfile.cpp \
 			tools/copyright-fixer/main.cpp
 copyright-fixer_LIBS = boost_filesystem boost_program_options \
 			boost_system

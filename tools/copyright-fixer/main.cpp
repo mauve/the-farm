@@ -10,7 +10,9 @@
 
 #include <boost/filesystem.hpp>
 #include <boost/program_options.hpp>
-#include <boost/token_iterator.hpp>
+#include <boost/tokenizer.hpp>
+
+#include <util/iostream/readfile.hpp>
 
 namespace po = boost::program_options;
 namespace fs = boost::filesystem;
@@ -35,7 +37,12 @@ std::vector<std::string> split_entries_by_comma (const std::vector<std::string>&
 		typedef boost::char_separator<char> separator;
 		typedef boost::tokenizer<boost::char_separator<char> > tokenizer;
 
-		tokenizer tok(*iter, separator(','));
+		tokenizer tok(*iter, separator(","));
+		for (tokenizer::iterator iter = tok.begin();
+				iter != tok.end(); ++iter)
+		{
+			result.push_back(*iter);
+		}
 	}
 
 	return result;
@@ -75,7 +82,7 @@ int main (int argc, char* argv[])
 		bool dry_run = !!vm.count("dry-run");
 		bool verbose = !!vm.count("verbose");
 
-		std::vector<std::string> exts = vm["ext"].as<std::vector<std::string> >();
+		std::vector<std::string> exts = split_entries_by_comma(vm["ext"].as<std::vector<std::string> >());
 		std::string base = vm["base"].as<std::string> ();
 
 		fs::recursive_directory_iterator iter(base);
@@ -98,31 +105,37 @@ int main (int argc, char* argv[])
 				continue;
 			}
 
-			std::fstream file(p.string().c_str());
-			if (!file.is_open()) {
+			std::vector<char> buf;
+			if (!util::readfile(p.string(), buf)) {
 				std::cerr << "Error: could not open: " << p << std::endl;
 				continue;
 			}
 
+			std::size_t copyright_length = std::strlen(copyright);
 			bool needs_fixing = false;
-			std::vector<char> buf(std::strlen(copyright));
-			if (file.read(&buf[0], std::strlen(copyright))) {
-				if (!std::equal(buf.begin(), buf.end(), copyright)) {
+			if (buf.size() >= copyright_length) {
+				if (!std::equal(buf.begin(), buf.begin() + copyright_length, copyright)) {
 					if (verbose)
 						std::cerr << "  Needs fixing: Does not start with copyright." << std::endl;
 					needs_fixing = true;
 				}
-			} else if (file.eof()) {
+			} else {
 				if (verbose)
 					std::cerr << "  Needs fixing: Not big enough for correct copyright." << std::endl;
 				needs_fixing = true;
-				file.clear();
 			}
 
 			if (needs_fixing) {
 				std::cout << "Adding copyright to: " << p << std::endl;
 				if (!dry_run) {
-					file.write(copyright, std::strlen(copyright));
+					std::ofstream file(p.string().c_str());
+					if (!file.write(copyright, std::strlen(copyright))) {
+						std::cerr << "  Could not write copyright." << std::endl;
+						continue;
+					}
+					if (!file.write(&buf[0], buf.size())) {
+						std::cerr << "  Could not write original content." << std::endl;
+					}
 				}
 			} else if (verbose) {
 				std::cerr << "  Has correct copyright." << std::endl;
