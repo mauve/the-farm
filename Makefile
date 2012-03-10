@@ -126,7 +126,8 @@ PROGRAMS = \
 			stupidtest-test \
 			network-test \
 			farm-test \
-			farm
+			farm \
+			copyright-fixer
 
 INCLUDES = src
 
@@ -207,5 +208,10 @@ farm_SRCS = \
 			main.cpp
 
 farm_LIBS = ${farm_base_LIBS}
+
+copyright-fixer_SRCS = \
+			tools/copyright-fixer/main.cpp
+copyright-fixer_LIBS = boost_filesystem boost_program_options \
+			boost_system
 
 include common.mk
