@@ -1,3 +1,6 @@
+/*
+ * Copyright (C) 2012, All rights reserved, Mikael Olenfalk <mikael@olenfalk.se>
+ */
 
 #ifndef UTIL_TYPE_TRAITS_REMOVE_CV_REF_HPP_
 #define UTIL_TYPE_TRAITS_REMOVE_CV_REF_HPP_

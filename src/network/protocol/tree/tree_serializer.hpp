@@ -1,3 +1,6 @@
+/*
+ * Copyright (C) 2012, All rights reserved, Mikael Olenfalk <mikael@olenfalk.se>
+ */
 
 #ifndef NETWORK_PROTOCOL_TREE_TREE_SERIALIZER_HPP_
 #define NETWORK_PROTOCOL_TREE_TREE_SERIALIZER_HPP_

@@ -1,3 +1,6 @@
+/*
+ * Copyright (C) 2012, All rights reserved, Mikael Olenfalk <mikael@olenfalk.se>
+ */
 
 #ifndef STANDARD_VECTOR_TREE_SERIALIZERS_HPP_
 #define STANDARD_VECTOR_TREE_SERIALIZERS_HPP_
