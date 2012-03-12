@@ -5,6 +5,9 @@
 #ifndef NETWORK_PROTOCOL_DETAIL_RETURN_PARSER_HPP_
 #define NETWORK_PROTOCOL_DETAIL_RETURN_PARSER_HPP_
 
+#include <boost/mpl/contains.hpp>
+#include <boost/utility/enable_if.hpp>
+
 #include "../payload.hpp"
 
 namespace network {
@@ -17,7 +20,8 @@ class return_parser
 {
 public:
 	template <typename T>
-	void handle(const T& v)
+	typename boost::enable_if< boost::mpl::contains<payload_item_t::types, T> >::type
+	handle(const T& v)
 	{
 		_payload.push_back(v);
 	}

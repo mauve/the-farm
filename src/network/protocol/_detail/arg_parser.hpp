@@ -7,6 +7,10 @@
 
 #include "../payload.hpp"
 
+#include <boost/mpl/contains.hpp>
+#include <boost/type_traits/remove_cv.hpp>
+#include <boost/type_traits/remove_reference.hpp>
+
 namespace network {
 
 namespace protocol {
@@ -21,7 +25,10 @@ public:
 	{}
 
 	template <typename Result>
-	Result pop ()
+	typename boost::enable_if<
+		is_payload_type<Result>,
+		Result >
+	::type pop ()
 	{
 		if (_iter == _end)
 			throw std::out_of_range("not enough arguments");

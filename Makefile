@@ -184,8 +184,10 @@ network-test_SRCS = \
 			${network_SRCS} \
 			src/network/transport/message_passer_tests.cpp \
 			src/network/transport/mock_connection.cpp \
+			src/network/protocol/tree/tree_serializer_tests.cpp \
 			src/util/memstream.cpp \
 			src/network/network_test.cpp
+
 network-test_LIBS = boost_system boost_thread boost_unit_test_framework
 
 farm_base_LIBS = boost_system \

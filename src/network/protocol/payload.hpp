@@ -9,8 +9,11 @@
 
 #include <vector>
 #include <string>
+
 #include <boost/variant.hpp>
 #include <boost/cstdint.hpp>
+#include <util/type_traits/remove_cv_ref.hpp>
+#include <boost/mpl/contains.hpp>
 
 namespace network {
 
@@ -40,6 +43,14 @@ typedef boost::variant<
 		> payload_item_t;
 
 typedef std::vector<payload_item_t> payload;
+
+template <typename T>
+struct is_payload_type :
+	public boost::mpl::contains<
+		payload_item_t::types,
+		typename util::type_traits::remove_cv_ref< T >::type
+	>
+{};
 
 }  // namespace protocol
 

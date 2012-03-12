@@ -13,7 +13,12 @@ namespace _detail {
 using transport::message;
 using transport::message_passer;
 
-message::pointer base_dispatcher::call (boost::uint32_t opcode, message::const_pointer in)
+base_dispatcher::base_dispatcher(message_passer& mpi)
+	: _mpi(mpi)
+{
+}
+
+message::pointer base_dispatcher::call (message::const_pointer in)
 {
 	payload arguments;
 	try {
@@ -29,7 +34,7 @@ message::pointer base_dispatcher::call (boost::uint32_t opcode, message::const_p
 
 	try {
 		return_parser ret_parser;
-		perform_call(_mpi, opcode, ret_parser, arguments);
+		_perform_call(_mpi, in->get_header().opcode, ret_parser, arguments);
 
 		transport::serializer<payload> serializer(ret_parser.result());
 		message::header reply_header = message_passer::create_reply_header(in->get_header(), message::error_success);
@@ -45,6 +50,13 @@ message::pointer base_dispatcher::call (boost::uint32_t opcode, message::const_p
 		// TODO: add correct error mapping
 		return message_passer::create_reply(in->get_header(), message::error_internal_error);
 	}
+}
+
+message_passer::callback_connection base_dispatcher::_connect(boost::uint32_t opcode)
+{
+	return _mpi.connect_on_request(opcode,
+				boost::bind(&base_dispatcher::call, this, _1)
+			);
 }
 
 }  // namespace _detail

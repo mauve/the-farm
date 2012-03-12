@@ -22,11 +22,12 @@ class base_dispatcher
 public:
 	base_dispatcher(transport::message_passer& mpi);
 
-	transport::message::pointer call (boost::uint32_t opcode, transport::message::const_pointer in);
+	transport::message::pointer call (transport::message::const_pointer in);
 
 private:
-	virtual void perform_call (transport::message_passer& mpi, boost::uint32_t opcode,
+	virtual void _perform_call (transport::message_passer& mpi, boost::uint32_t opcode,
 			return_parser& ret_parser, const payload& arguments) = 0;
+	transport::message_passer::callback_connection _connect(boost::uint32_t opcode);
 
 	transport::message_passer& _mpi;
 };
@@ -43,16 +44,17 @@ public:
 	{}
 
 	template <typename Function>
-	void register_function (boost::uint32_t opcode, Function f)
+	transport::message_passer::callback_connection register_function (boost::uint32_t opcode, Function f)
 	{
 		_registry.register_function(opcode, f);
+		return _connect(opcode);
 	}
 
 	// the call function is inherited from
 	// base_dispatcher
 
 private:
-	virtual void perform_call (transport::message_passer& mpi, boost::uint32_t opcode,
+	virtual void _perform_call (transport::message_passer& mpi, boost::uint32_t opcode,
 			_detail::return_parser& ret_parser, const payload& arguments)
 	{
 		_registry.call(_instance, mpi, opcode, ret_parser, arguments);
@@ -62,8 +64,8 @@ private:
 		_detail::arg_parser,
 		payload,
 		_detail::return_parser,
-		transport::message_passer,
-		boost::uint32_t> _registry;
+		boost::uint32_t,
+		transport::message_passer> _registry;
 
 	Class* _instance;
 };
