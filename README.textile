@@ -1,0 +1,45 @@
+h1. @the-farm@
+
+Authors:
+* Mikael Olenfalk <mikael@olenfalk.se>
+
+h2. About
+
+I started this project because I wanted to play with C++ and I wanted to create a smallish server-side applications which allows somebody to upload small C++ snippets and have them compiled on a wide range of compilers in order to test what code each compiler generates and how they handle certain constructs.
+
+h2. TODO
+
+# replace custom serialization with Boost.Serialize
+
+h2. Architecture
+
+The idea is to have one or more management nodes and agents which connect to these management nodes, the nodes all talk to each other with custom message passing protocol which supports request-response and subscriptions (in both directions).
+
+The codebase is largely divided in three subdirectories: @src/farm@, @src/network@ and @src/util@. The @src/farm@ contains really application specific logic and types, @src/network@ contains completely application-agnostic networking code (it also contains a specific serialization which I want to replace with Boost.Serialize some time soon) and last but not least @src/util@ contains - as the name suggests - a pretty large utility library.
+
+h2. Code Standard
+
+There is no really defined code-standard, but there is are some big guidelines I usually follow for all my code:
+
+# application-specific classes use @CamelCase@, e.g. @farm::jobs::JobOrder@
+# agnostic classes and types use @standard_naming_convention@, e.g. @util::buffer::appendable_buffer@
+# I really like namespaces, e.g. @farm::jobs::JobOrder@, I still have to decide if I want that class to be named @farm::jobs::Order@ however
+# namespaces match directories, e.g. @farm::jobs::JobOrder@ is located in @src/farm/jobs/job_order.h@
+# file-names use @standard_naming_convention@, e.g. @src/farm/jobs/job_order.h@
+# I do not like @using namespace@, but I prefer @using@ instead, sometimes @using namespace@ is useful though
+# stuff that is not supposed to be used outside of a module is put in a @_detail@ subfolder
+# unit-tests are named @filename_tests.cpp@ and are located just next to @filename.cpp@
+# some test-related utilities may be located in a @_test@ subdirectory, those are usually special stuff
+# mocks are named @mock_filename.cpp@ and are located just next to @filename.cpp@
+# I use tabs for everything and I usually never align, just indent, tab-size is set to 4
+# inclusion guards are named @__DIR_SUBDIR_FILE_NAME_HPP__@
+
+
+
+
+
+
+
+
+
+
