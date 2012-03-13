@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<psf version="2.0">
+<provider id="org.eclipse.egit.core.GitProvider">
+<project reference="1.0,git@github.com:mauve/the-farm.git,master,."/>
+<project reference="1.0,git@github.com:mauve/the-farm.wiki.git,master,."/>
+</provider>
+<workingSets editPageId="org.eclipse.cdt.ui.CElementWorkingSetPage" id="1331666659753_2" label="the-farm" name="the-farm">
+<item factoryID="org.eclipse.cdt.ui.PersistableCElementFactory" path="/the-farm" type="4"/>
+<item factoryID="org.eclipse.ui.internal.model.ResourceFactory" path="/the-farm.wiki" type="4"/>
+</workingSets>
+</psf>
