@@ -45,7 +45,7 @@ bc. $ make all-Debug
 To get some help with the Make system just write:
 
 bc. $ make manual-toc | less -R
-bc. $ make manual | less -R
+$ make manual | less -R
 
 h2. Architecture
 
