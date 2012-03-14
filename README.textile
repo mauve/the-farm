@@ -1,21 +1,57 @@
 h1. @the-farm@
 
-Authors:
+h2. Authors:
+
 * Mikael Olenfalk <mikael@olenfalk.se>
 
 h2. About
 
 I started this project because I wanted to play with C++ and I wanted to create a smallish server-side applications which allows somebody to upload small C++ snippets and have them compiled on a wide range of compilers in order to test what code each compiler generates and how they handle certain constructs.
 
-h2. TODO
+h2. Getting Started with Development
 
-# replace custom serialization with Boost.Serialize
+The easiest way to get started is by using Eclipse on a *NIX-like system (Mac or Linux).
+
+h3. Setting up Eclipse
+
+I use the following plugins:
+
+# Eclipse CDT 8
+# Eclipse GIT
+# Eclipse Mylyn (with Github Connectors)
+
+Once you have installed all these plugins you can use the following _Project Set File_ to quickly setup your workspace perform the following steps:
+
+# Choose: @File > Import...@
+# Then select: @Team > Team Project Set@
+# In the URI field enter the following URL: @https://raw.github.com/mauve/the-farm/master/projectset.psf@
+
+Soonishly I will make this code build with Visual Studio 2011 aswell, I am however reluctant in accepting other build systems and IDEs.
+
+h3. Building
+
+To the project uses GNU Make on *NIX-like system and the Eclipse project uses the Make builder to build so the only thing you need to edit in order to build stuff is @Makefile@. The @Makefile@ uses @common.mk@ which is a private project of mine which makes it possible to use @Automake@-like syntax in makefiles.
+
+h4. Building in Eclipse
+
+If you have disabled _Automatic Build_, just click _Project > Build All_ to build. The default target to build  is @all-Debug@ which builds all targets in Debug.
+
+h4. Building on the Command Line (NIX)
+
+To build just write:
+
+bc. $ make all-Debug
+ 
+To get some help with the Make system just write:
+
+bc. $ make manual-toc | less -R
+bc. $ make manual | less -R
 
 h2. Architecture
 
 The idea is to have one or more management nodes and agents which connect to these management nodes, the nodes all talk to each other with custom message passing protocol which supports request-response and subscriptions (in both directions).
 
-The codebase is largely divided in three subdirectories: @src/farm@, @src/network@ and @src/util@. The @src/farm@ contains really application specific logic and types, @src/network@ contains completely application-agnostic networking code (it also contains a specific serialization which I want to replace with Boost.Serialize some time soon) and last but not least @src/util@ contains - as the name suggests - a pretty large utility library.
+The code base is largely divided in three subdirectories: @src/farm@, @src/network@ and @src/util@. The @src/farm@ contains really application specific logic and types, @src/network@ contains completely application-agnostic networking code (it also contains a specific serialization which I want to replace with Boost.Serialize some time soon) and last but not least @src/util@ contains - as the name suggests - a pretty large utility library.
 
 h2. Code Standard
 
@@ -24,8 +60,8 @@ There is no really defined code-standard, but there is are some big guidelines I
 # application-specific classes use @CamelCase@, e.g. @farm::jobs::JobOrder@
 # agnostic classes and types use @standard_naming_convention@, e.g. @util::buffer::appendable_buffer@
 # I really like namespaces, e.g. @farm::jobs::JobOrder@, I still have to decide if I want that class to be named @farm::jobs::Order@ however
-# namespaces match directories, e.g. @farm::jobs::JobOrder@ is located in @src/farm/jobs/job_order.h@
-# file-names use @standard_naming_convention@, e.g. @src/farm/jobs/job_order.h@
+# namespaces match directories, e.g. @farm::jobs::JobOrder@ is located in @src/farm/jobs/job_order.hpp@
+# file-names use @standard_naming_convention@, e.g. @src/farm/jobs/job_order.hpp@
 # I do not like @using namespace@, but I prefer @using@ instead, sometimes @using namespace@ is useful though
 # stuff that is not supposed to be used outside of a module is put in a @_detail@ subfolder
 # unit-tests are named @filename_tests.cpp@ and are located just next to @filename.cpp@
@@ -33,6 +69,19 @@ There is no really defined code-standard, but there is are some big guidelines I
 # mocks are named @mock_filename.cpp@ and are located just next to @filename.cpp@
 # I use tabs for everything and I usually never align, just indent, tab-size is set to 4
 # inclusion guards are named @__DIR_SUBDIR_FILE_NAME_HPP__@
+# C++ source files are named @.cpp@ and header files are named @.hpp@
+# Stuff which has nothing in particular to do with the code in @src/farm@ or @src/network@ is supposed to land in a fitting subdirectory of @src/util@ _with_ accompanying tests.
+
+h1. Copyright
+
+bq. Copyright (C) 2012, All rights reserved, Mikael Olenfalk <mikael@olenfalk.se>
+
+And yes I am _evil_ (therefore the above copyright).
+
+
+
+
+
 
 
 
