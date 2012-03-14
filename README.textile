@@ -24,7 +24,7 @@ Once you have installed all these plugins you can use the following _Project Set
 
 # Choose: @File > Import...@
 # Then select: @Team > Team Project Set@
-# In the URI field enter the following URL: @https://raw.github.com/mauve/the-farm/master/projectset.psf@
+# In the URI field enter the following URL: @https://raw.github.com/mauve/the-farm/master/projectset.psf@ (the above does not work while this repo is private, you need to get a URL which contains an access token, therefore just browse to the above file and select _RAW_ view and _then_ copy the URL)
 
 Soonishly I will make this code build with Visual Studio 2011 aswell, I am however reluctant in accepting other build systems and IDEs.
 
